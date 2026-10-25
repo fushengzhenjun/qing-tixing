@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>轻提醒 · 隐私政策</title>
+<style>
+  :root{
+    --green:#15886E; --green-d:#0C5E4B; --ink:#10231D; --sub:#5B6B65;
+    --line:#E5ECE9; --bg:#F4F7F5; --card:#fff;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    font-family:"Microsoft YaHei","PingFang SC","Segoe UI",system-ui,sans-serif;
+    background:var(--bg); color:var(--ink); line-height:1.85;
+    -webkit-font-smoothing:antialiased;
+  }
+  .hero{
+    background:linear-gradient(150deg,#15886E,#0C5E4B); color:#fff; padding:64px 20px 72px;
+    text-align:center;
+  }
+  .hero .logo{
+    width:76px;height:76px;border-radius:20px;margin:0 auto 20px;
+    background:rgba(255,255,255,.14);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .hero h1{font-size:34px;font-weight:800;letter-spacing:3px;}
+  .hero p{margin-top:10px;color:#CDEFE2;font-size:15px;}
+  .wrap{max-width:780px;margin:-38px auto 60px;padding:0 18px;}
+  .badge{
+    background:var(--card);border-radius:16px;padding:24px 28px;margin-bottom:26px;
+    box-shadow:0 12px 34px rgba(12,60,47,.10);border:1px solid var(--line);
+    display:flex;align-items:center;gap:18px;
+  }
+  .badge .dot{width:52px;height:52px;border-radius:50%;background:#E6F7F0;flex:0 0 52px;
+    display:flex;align-items:center;justify-content:center;}
+  .badge h2{font-size:19px;color:var(--green-d);}
+  .badge p{font-size:14px;color:var(--sub);}
+  section{
+    background:var(--card);border:1px solid var(--line);border-radius:16px;
+    padding:26px 28px;margin-bottom:18px;
+  }
+  section h3{font-size:17px;color:var(--green-d);margin-bottom:10px;display:flex;align-items:center;gap:9px;}
+  section h3 .n{
+    width:24px;height:24px;border-radius:7px;background:var(--green);color:#fff;
+    font-size:13px;display:inline-flex;align-items:center;justify-content:center;flex:0 0 24px;
+  }
+  section p,section li{font-size:15px;color:#33433D;}
+  ul{margin:6px 0 0 22px;} li{margin-bottom:5px;}
+  .kv{color:var(--sub);}
+  code{background:#F0F5F3;border-radius:5px;padding:1px 7px;font-size:13px;color:var(--green-d);
+    font-family:Consolas,monospace;}
+  footer{text-align:center;color:var(--sub);font-size:13px;padding:10px 0 40px;}
+</style>
+</head>
+<body>
+  <div class="hero">
+    <div class="logo">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"
+           stroke-linecap="round" stroke-linejoin="round">
+        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+      </svg>
+    </div>
+    <h1>轻提醒 · 隐私政策</h1>
+    <p>一款完全离线、纯本地运行的到点提醒软件</p>
+    <p>生效日期：2026 年 10 月 25 日</p>
+  </div>
+
+  <div class="wrap">
+    <div class="badge">
+      <div class="dot">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#15886E" stroke-width="1.8"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 3l8 3v6c0 5-3.5 7.5-8 9-4.5-1.5-8-4-8-9V6z"/>
+          <path d="M9 12l2 2 4-4"/>
+        </svg>
+      </div>
+      <div>
+        <h2>一句话承诺：本软件不联网、不收集任何数据</h2>
+        <p>没有账号、没有服务器、没有广告、没有统计与崩溃上报，所有提醒数据只存在你的设备里。</p>
+      </div>
+    </div>
+
+    <section>
+      <h3><span class="n">1</span>我们如何对待你的数据</h3>
+      <p>本软件为纯本地应用，<strong>不包含任何网络通信功能</strong>。我们不会、也无法收集、上传、存储、共享或出售任何个人信息或设备信息。软件中不存在任何广告、第三方统计分析、行为追踪或崩溃上报组件。</p>
+    </section>
+
+    <section>
+      <h3><span class="n">2</span>数据存储在哪里</h3>
+      <p>你创建的提醒、设置、分类等全部数据，仅通过浏览器本地存储（localStorage）保存在你的电脑本地应用数据目录中，不会离开这台设备。</p>
+      <p class="kv">删除方式：在软件「设置 → 清空全部提醒」中删除；卸载软件即移除程序文件。</p>
+    </section>
+
+    <section>
+      <h3><span class="n">3</span>系统权限说明</h3>
+      <ul>
+        <li><strong>系统通知：</strong>仅用于在到点时在本机弹出提醒，不向任何外部发送。</li>
+        <li><strong>开机自启动：</strong>仅在你主动开启后，于本机注册表写入开机启动项，可随时关闭，不涉及任何联网行为。</li>
+        <li><strong>后台运行 / 系统托盘：</strong>仅用于保证关闭窗口后仍能准时提醒，全部在本机完成。</li>
+        <li><strong>声音与振动：</strong>由系统本地播放，不读取、不上传任何音频或文件。</li>
+      </ul>
+    </section>
+
+    <section>
+      <h3><span class="n">4</span>我们不做的事</h3>
+      <ul>
+        <li>不要求注册、登录，不收集姓名、手机、邮箱、位置、通讯录等任何信息。</li>
+        <li>不接入广告 SDK，不做个性化推荐，不做用户画像。</li>
+        <li>不读取你设备上的其他文件、照片或应用数据。</li>
+        <li>不进行任何形式的联网请求或数据传输。</li>
+      </ul>
+    </section>
+
+    <section>
+      <h3><span class="n">5</span>儿童隐私</h3>
+      <p>由于本软件不收集任何数据，对任何年龄段的用户均一视同仁，不会收集儿童的个人信息。</p>
+    </section>
+
+    <section>
+      <h3><span class="n">6</span>政策更新</h3>
+      <p>如本政策发生变更，我们会在本页面更新并调整生效日期。由于软件无网络功能，更新政策不会也不需要向你推送。</p>
+    </section>
+
+    <section>
+      <h3><span class="n">7</span>联系我们</h3>
+      <p>如对本隐私政策有任何疑问或建议，可通过项目仓库提交 Issue 联系：<strong>https://github.com/fushengzhenjun/qing-tixing/issues</strong>。</p>
+    </section>
+
+    <footer>© 2026 fushengzhenjun · 轻提醒</footer>
+  </div>
+</body>
+</html>
