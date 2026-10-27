@@ -131,6 +131,7 @@ private fun AppRoot() {
                     Scheduler(ctx).schedule(updated)
                     refresh()
                 },
+                onSetDone = { id, key, done -> Store.setDone(id, key, done) },
                 onSettings = { screen = Screen.Settings },
                 onWarnClick = { screen = Screen.Settings }
             )

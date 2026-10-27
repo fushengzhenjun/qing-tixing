@@ -36,7 +36,12 @@ data class Reminder(
     val ring: Ring = Ring.CHIME,
     val vibrate: Boolean = true,
     val createdAt: Long = System.currentTimeMillis(),
-    val lastFiredAt: Long = 0L
+    val lastFiredAt: Long = 0L,
+    /**
+     * 已勾「完成」的日期，格式 yyyy-MM-dd。
+     * 清单视图里勾一下就往这里加一条，只影响那一天，不动提醒本身的规则。
+     */
+    val doneDates: List<String> = emptyList()
 )
 
 /** 下一次该响的时刻；返回 null 表示这条已经不再触发。 */

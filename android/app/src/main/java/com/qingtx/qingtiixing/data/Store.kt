@@ -84,4 +84,13 @@ object Store {
     fun remove(id: String) {
         save(all().filterNot { it.id == id })
     }
+
+    /** 清单视图里勾一下：只改那一天的完成状态，不动提醒规则 */
+    @Synchronized
+    fun setDone(id: String, dateKey: String, done: Boolean) {
+        val r = get(id) ?: return
+        val s = r.doneDates.toMutableSet()
+        if (done) s.add(dateKey) else s.remove(dateKey)
+        upsert(r.copy(doneDates = s.toList()))
+    }
 }
