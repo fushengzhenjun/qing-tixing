@@ -1,0 +1,19 @@
+# 统一换行符，避免在 Windows 提交、在 mac/Linux 检出时脚本跑不起来
+* text=auto
+
+# 二进制：别做任何转换
+*.png  binary
+*.bmp  binary
+*.ico  binary
+*.jar  binary
+*.exe  binary
+*.jks  binary
+*.keystore binary
+
+# 必须是 LF 的
+gradlew          text eol=lf
+*.sh             text eol=lf
+
+# 必须是 CRLF 的
+*.bat            text eol=crlf
+*.nsh            text eol=crlf
