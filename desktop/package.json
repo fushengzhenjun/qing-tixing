@@ -1,0 +1,82 @@
+{
+  "name": "qing-ti-xing",
+  "productName": "轻提醒",
+  "version": "1.5.0",
+  "description": "简单、简洁、无广告的定时提醒",
+  "main": "main.js",
+  "author": "fushengzhenjun",
+  "license": "MIT",
+  "homepage": "https://github.com/fushengzhenjun/qing-tixing",
+  "scripts": {
+    "start": "electron .",
+    "portable": "node build.js",
+    "assets": "node ../tools/gen_installer_assets.js",
+    "dist": "electron-builder --win nsis --x64",
+    "release": "node build.js && electron-builder --win nsis --x64"
+  },
+  "build": {
+    "appId": "com.qingtx.qingtiixing",
+    "productName": "轻提醒",
+    "copyright": "Copyright © 2026 fushengzhenjun",
+    "electronLanguages": [
+      "zh-CN",
+      "en-US"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "轻提醒.html",
+      "alarm.html",
+      "quick.html",
+      "icon.ico",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "icon.ico",
+      "artifactName": "QingTiXing-Setup-${version}.${ext}",
+      "legalTrademarks": "轻提醒",
+      "requestedExecutionLevel": "asInvoker"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowElevation": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": "always",
+      "createStartMenuShortcut": true,
+      "shortcutName": "轻提醒",
+      "uninstallDisplayName": "轻提醒 ${version}",
+      "deleteAppDataOnUninstall": false,
+      "installerIcon": "icon.ico",
+      "uninstallerIcon": "icon.ico",
+      "installerHeaderIcon": "icon.ico",
+      "installerHeader": "installerHeader.bmp",
+      "installerSidebar": "installerSidebar.bmp",
+      "uninstallerSidebar": "uninstallerSidebar.bmp",
+      "installerLanguages": [
+        "zh_CN"
+      ],
+      "language": "2052",
+      "include": "installer.nsh",
+      "artifactName": "QingTiXing-Setup-${version}.${ext}"
+    }
+  },
+  "devDependencies": {
+    "@electron/packager": "^18.3.6",
+    "electron": "^33.3.1",
+    "electron-builder": "^26.18.0",
+    "png-to-ico": "^2.1.8",
+    "sharp": "^0.33.5"
+  }
+}

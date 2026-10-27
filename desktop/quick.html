@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>快速添加</title>
+<style>
+  :root{
+    --bg:#FFFFFF; --ink:#1B1F1A; --ink2:#6B7268; --ink3:#9AA196;
+    --brand:#15886E; --danger:#C0453B; --line:rgba(27,31,26,.10); --chip:#F1F3EE;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#1C1F1D; --ink:#EDEFEA; --ink2:#A6ADA3; --ink3:#7B8279;
+      --brand:#3FB995; --danger:#E4837A; --line:rgba(255,255,255,.12); --chip:#262A26; }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:transparent;overflow:hidden;
+    font-family:"Microsoft YaHei UI","PingFang SC","Segoe UI",system-ui,sans-serif;color:var(--ink)}
+  .card{margin:8px;padding:13px 16px 12px;border-radius:18px;background:var(--bg);
+    border:1px solid var(--line);box-shadow:0 16px 36px rgba(0,0,0,.24);
+    display:flex;flex-direction:column;gap:7px}
+  .head{display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:var(--ink3);letter-spacing:.3px}
+  .head b{font-weight:700;color:var(--ink2)}
+  input{width:100%;border:none;outline:none;background:transparent;font-family:inherit;
+    font-size:17px;line-height:1.35;color:var(--ink);padding:1px 0 3px}
+  input::placeholder{color:var(--ink3);font-size:15px}
+  .prev{font-size:12.5px;color:var(--ink2);min-height:17px;display:flex;align-items:center}
+  .prev.ok{color:var(--brand);font-weight:700}
+  .prev.bad{color:var(--danger)}
+  .chips{display:flex;gap:6px}
+  .chips button{border:none;background:var(--chip);color:var(--ink2);font-family:inherit;
+    font-size:11.5px;padding:5px 10px;border-radius:9px;cursor:pointer;transition:color .12s}
+  .chips button:hover{color:var(--ink)}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="head"><b>快速添加</b><span>Enter 保存 · Esc 关闭</span></div>
+  <input id="q" autocomplete="off" spellcheck="false" placeholder="明天下午三点 开会 / 30 分钟后 喝水">
+  <div class="prev" id="prev">说一句话就行，时间会自己认出来</div>
+  <div class="chips" id="chips">
+    <button data-v="10 分钟后 ">10 分钟后</button>
+    <button data-v="1 小时后 ">1 小时后</button>
+    <button data-v="明天 9:00 ">明天 9:00</button>
+    <button data-v="每天早上 8:00 ">每天早上 8:00</button>
+  </div>
+</div>
+<script>
+(function(){
+  var q=document.getElementById("q"), prev=document.getElementById("prev");
+  var done=false;
+
+  function p2(n){return (n<10?"0":"")+n;}
+  function cn2num(s){
+    if(/^\d+$/.test(s)) return parseInt(s,10);
+    var m={"零":0,"一":1,"二":2,"两":2,"三":3,"四":4,"五":5,"六":6,"七":7,"八":8,"九":9,"十":10};
+    if(s.length===1) return m[s];
+    if(s.charAt(0)==="十") return 10+(m[s.charAt(1)]||0);
+    if(s.charAt(1)==="十") return (m[s.charAt(0)]||0)*10+(s.charAt(2)?(m[s.charAt(2)]||0):0);
+    return m[s.charAt(0)];
+  }
+  var NUM="[一二三四五六七八九十]{1,3}|\\d{1,2}";
+  var WDMAP={"一":1,"二":2,"三":3,"四":4,"五":5,"六":6,"日":0,"天":0,"1":1,"2":2,"3":3,"4":4,"5":5,"6":6,"7":0};
+
+  function parse(raw){
+    var now=new Date();
+    var s=String(raw||"").replace(/\s+/g," ").trim();
+    if(!s) return {ok:false,msg:"说一句话就行，比如「明天下午三点 开会」"};
+    var work=" "+s+" ";
+    function cut(re){var m=re.exec(work);if(!m)return null;work=work.slice(0,m.index)+" "+work.slice(m.index+m[0].length);return m;}
+
+    var repeat=null, weekDay=null;
+    if(cut(/每(?:天|日)/)) repeat="daily";
+    else {
+      var ew=cut(/每(?:个)?(?:周|星期|礼拜)([一二三四五六日天1-7])/);
+      if(ew){ repeat="week"; weekDay=WDMAP[ew[1]]; }
+      else if(cut(/(?:每个)?工作日/)) repeat="weekday";
+    }
+
+    var period=null;
+    var pw=cut(/(凌晨|早上|早晨|上午|中午|下午|傍晚|晚上|夜里)/);
+    if(pw) period=pw[1];
+
+    var relMs=null;
+    var rm=cut(/(\d+|半)\s*个?\s*(分钟|分|小时|钟头|天)\s*(?:以?后|之后)/);
+    if(rm){
+      var n=(rm[1]==="半")?0.5:parseInt(rm[1],10);
+      var u=rm[2];
+      relMs=/天/.test(u)? n*86400000 : (/分/.test(u)? n*60000 : n*3600000);
+    }
+
+    var dayOffset=null, monthDay=null, hour=null, min=0;
+
+    var dm=cut(/(大后天|后天|明天|明日|明早|明晚|今天|今日|今晚)/);
+    if(dm){
+      var w=dm[1];
+      if(/大后天/.test(w)) dayOffset=3;
+      else if(/后天/.test(w)) dayOffset=2;
+      else if(/明天|明日|明早|明晚/.test(w)) dayOffset=1;
+      else dayOffset=0;
+      if(/早/.test(w)) period="早上";
+      if(/晚/.test(w)) period="晚上";
+    }
+
+    if(dayOffset===null&&!relMs){
+      var wm=cut(/(下下|下)?(?:周|星期|礼拜)([一二三四五六日天1-7])/);
+      if(wm){
+        var map=WDMAP;
+        var target=map[wm[2]];
+        var add=wm[1]==="下下"?2:(wm[1]==="下"?1:0);
+        var base=new Date(now); base.setHours(0,0,0,0);
+        var monday=new Date(base); monday.setDate(base.getDate()-((base.getDay()+6)%7));
+        var cand=new Date(monday); cand.setDate(monday.getDate()+((target+6)%7)+7*add);
+        dayOffset=Math.round((cand-base)/86400000);
+        if(dayOffset<0) dayOffset+=7;
+      }
+    }
+
+    if(dayOffset===null){
+      var mm=cut(/(\d{1,2})\s*月\s*(\d{1,2})\s*[日号]/);
+      if(mm) monthDay={m:+mm[1],d:+mm[2]};
+    }
+
+    var tm=cut(/(\d{1,2})\s*[:：]\s*(\d{1,2})/);
+    if(tm){ hour=+tm[1]; min=+tm[2]; }
+    else{
+      var pm=cut(new RegExp("(凌晨|早上|早晨|上午|中午|下午|傍晚|晚上|夜里)?\\s*("+NUM+")\\s*[点时](半|\\d{1,2}\\s*分?)?"));
+      if(pm){
+        if(pm[1]) period=pm[1];
+        hour=cn2num(pm[2]);
+        if(pm[3]) min=(pm[3]==="半")?30:parseInt(pm[3],10);
+      }
+    }
+
+    if(hour!=null){
+      if(period==="中午"||period==="下午"||period==="傍晚"||period==="晚上"||period==="夜里"){
+        if(hour<12) hour+=12;
+      }
+      if(period==="凌晨"&&hour===12) hour=0;
+      if(hour===24) hour=0;
+      if(!(hour>=0&&hour<=23)) hour=null;
+    }
+    if(!(min>=0&&min<=59)) min=0;
+
+    var at=null;
+    if(relMs!=null){
+      at=new Date(now.getTime()+relMs);
+    }else{
+      var d0=new Date(now); d0.setHours(0,0,0,0);
+      if(monthDay){
+        var c2=new Date(now.getFullYear(),monthDay.m-1,monthDay.d);
+        if(c2<d0) c2=new Date(now.getFullYear()+1,monthDay.m-1,monthDay.d);
+        d0=c2;
+      }else if(dayOffset!=null){
+        d0.setDate(d0.getDate()+dayOffset);
+      }
+      if(hour==null){
+        if(!repeat) return {ok:false,msg:"没认出时间，试试「明天 9:00」「30 分钟后」"};
+        hour=9; min=0;
+      }
+      at=new Date(d0); at.setHours(hour,min,0,0);
+      if(!repeat&&at.getTime()<=now.getTime()) at.setDate(at.getDate()+1);
+    }
+
+    var title=work.replace(/[，,。.、;；:：]/g," ").replace(/\s+/g," ")
+      .replace(/^(提醒我|提醒|记得|帮我|要)\s*/,"").trim();
+    if(!title) title="提醒";
+
+    var DL=["日","一","二","三","四","五","六"];
+    var summary;
+    if(repeat){
+      var head = repeat==="weekday" ? "工作日 " : (repeat==="week" ? ("每周"+DL[weekDay]+" ") : "每天 ");
+      summary=head+p2(hour)+":"+p2(min);
+    }else{
+      var t0=new Date(now); t0.setHours(0,0,0,0);
+      var a0=new Date(at); a0.setHours(0,0,0,0);
+      var dd=Math.round((a0-t0)/86400000);
+      var day=dd===0?"今天":dd===1?"明天":dd===2?"后天":((at.getMonth()+1)+"月"+at.getDate()+"日");
+      summary=day+" 周"+DL[at.getDay()]+" "+p2(at.getHours())+":"+p2(at.getMinutes());
+    }
+
+    return {
+      ok:true, mode:repeat?"repeat":"once", title:title, rmode:repeat,
+      days: (repeat==="week")?[weekDay]:null,
+      at: repeat?null:(at.getFullYear()+"-"+p2(at.getMonth()+1)+"-"+p2(at.getDate())+"T"+p2(at.getHours())+":"+p2(at.getMinutes())),
+      repTime: repeat?(p2(hour)+":"+p2(min)):null,
+      summary: summary
+    };
+  }
+
+  function preview(){
+    if(done) return;
+    var v=q.value.trim();
+    if(!v){ prev.className="prev"; prev.textContent="说一句话就行，时间会自己认出来"; return; }
+    var r=parse(v);
+    if(!r.ok){ prev.className="prev bad"; prev.textContent=r.msg; return; }
+    prev.className="prev ok";
+    prev.textContent=r.summary+"　·　"+r.title;
+  }
+
+  function submit(){
+    if(done) return;
+    var r=parse(q.value);
+    if(!r.ok){ prev.className="prev bad"; prev.textContent=r.msg; return; }
+    done=true; q.disabled=true;
+    prev.className="prev ok"; prev.textContent="已添加 · "+r.summary;
+    window.qingtx.quickSubmit({
+      title:r.title, mode:r.mode, at:r.at, repTime:r.repTime, rmode:r.rmode, days:r.days
+    }).then(function(){
+      setTimeout(function(){ window.qingtx.quickCancel(); }, 620);
+    }).catch(function(){ window.qingtx.quickCancel(); });
+  }
+
+  function reset(){
+    done=false; q.disabled=false; q.value="";
+    prev.className="prev"; prev.textContent="说一句话就行，时间会自己认出来";
+    q.focus();
+  }
+
+  q.addEventListener("input",preview);
+  document.addEventListener("keydown",function(e){
+    if(e.key==="Escape"){ e.preventDefault(); window.qingtx.quickCancel(); return; }
+    if(e.key==="Enter"){ e.preventDefault(); submit(); }
+  });
+  document.getElementById("chips").addEventListener("click",function(e){
+    var b=e.target.closest("button"); if(!b||done) return;
+    q.value=b.dataset.v; q.focus();
+    try{ q.setSelectionRange(q.value.length,q.value.length); }catch(err){}
+    preview();
+  });
+
+  if(window.qingtx&&window.qingtx.onQuickShow) window.qingtx.onQuickShow(reset);
+  reset();
+})();
+</script>
+</body>
+</html>
