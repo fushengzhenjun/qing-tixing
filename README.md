@@ -9,14 +9,15 @@
 
 ## 下载
 
-**国内访问 GitHub 常不稳定，建议走 Gitee 镜像：**
+**国内访问 GitHub 常不稳定，建议走 Gitee 镜像，点下面的文件名直接下载：**
 
+- 安装版（推荐）：[QingTiXing-Setup-1.5.0.exe](https://gitee.com/fushengbanrizhenjun/qing-tixing/releases/download/v1.5.0/QingTiXing-Setup-1.5.0.exe)
+- 校验值：[SHA256-1.5.0.txt](https://gitee.com/fushengbanrizhenjun/qing-tixing/releases/download/v1.5.0/SHA256-1.5.0.txt)
 - 镜像仓库：https://gitee.com/fushengbanrizhenjun/qing-tixing
-- 镜像下载：https://gitee.com/fushengbanrizhenjun/qing-tixing/releases/latest
 
 两个地址的文件内容完全一致（可用 SHA256 互校）。镜像只托管安装包与源码副本，**不涉及任何联网功能**。
 
-前往 [Releases](https://github.com/fushengzhenjun/qing-tixing/releases) 下载最新版本：
+绿色版 zip 约 101 MB，超过 Gitee 单文件 100 MB 的上限，只在 GitHub 提供。前往 [Releases](https://github.com/fushengzhenjun/qing-tixing/releases) 下载：
 
 | 版本 | 文件 | 说明 |
 |---|---|---|

@@ -2,8 +2,14 @@
 
 ## 下载
 
-- **安装版（推荐）**：`QingTiXing-Setup-1.5.0.exe`，双击安装，**这次可以自己选装到哪**，无需管理员权限。
-- **绿色版（免安装）**：`QingTiXing_Portable_1.5.0.zip`，解压后双击 `轻提醒.exe`，数据写在程序目录。
+**点下面的文件名直接下载**（Gitee 国内节点，推荐）：
+
+- **安装版（推荐）**：[QingTiXing-Setup-1.5.0.exe](https://gitee.com/fushengbanrizhenjun/qing-tixing/releases/download/v1.5.0/QingTiXing-Setup-1.5.0.exe) —— 77 MB，双击安装，**可以自己选装到哪**，无需管理员权限
+- 校验值：[SHA256-1.5.0.txt](https://gitee.com/fushengbanrizhenjun/qing-tixing/releases/download/v1.5.0/SHA256-1.5.0.txt)
+
+绿色版（免安装，101 MB）超过 Gitee 单文件上限，只在 GitHub 提供：<https://github.com/fushengzhenjun/qing-tixing/releases>
+
+> 如果你的网络能正常访问 GitHub，也可以用那边的版本，两个文件内容完全一致。
 
 ## v1.5.0 重点：提醒真的"弹到脸上"了
 
