@@ -1,0 +1,11 @@
+# 安卓工程 · 不该进仓库的东西
+.gradle/
+build/
+app/build/
+local.properties
+keystore.properties
+*.jks
+*.keystore
+.idea/
+captures/
+*.iml

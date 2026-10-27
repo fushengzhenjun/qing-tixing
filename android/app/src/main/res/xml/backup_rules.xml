@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 11 及以下的备份规则：只备份提醒数据，别把缓存带上 -->
+<full-backup-content>
+    <include domain="file" path="reminders.json" />
+</full-backup-content>
