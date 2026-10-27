@@ -1,4 +1,4 @@
-/* 轻提醒 · 一键出包脚本（node tools/release.js）
+/* 轻铃 · 一键出包脚本（node tools/release.js）
    1) 打绿色版（electron-packager，带目录自检）
    2) 打安装包（electron-builder → NSIS，静默安装 /S）
    3) 汇总到 发布\：安装包、绿色版、绿色版 zip、商店素材、文档、SHA256 校验清单
@@ -164,14 +164,14 @@ if (rcP !== 0) {
   });
   if (rcP !== 0) die("绿色版构建失败，详见上方日志");
 }
-const portableSrc = path.join(DESKTOP, "release", "轻提醒-win32-x64");
-if (!fs.existsSync(path.join(portableSrc, "轻提醒.exe"))) die("绿色版产物缺失：" + portableSrc);
+const portableSrc = path.join(DESKTOP, "release", "轻铃-win32-x64");
+if (!fs.existsSync(path.join(portableSrc, "轻铃.exe"))) die("绿色版产物缺失：" + portableSrc);
 
 /* 1.5 签名绿色版主程序。
    必须赶在打 zip 之前签，否则压缩包里装的仍是未签名的那份。 */
 if (cert.mode !== "none") {
   log("①.5 签名绿色版主程序 …");
-  signQuiet(path.join(portableSrc, "轻提醒.exe"));
+  signQuiet(path.join(portableSrc, "轻铃.exe"));
 }
 
 /* 2. 安装包 */
@@ -190,7 +190,7 @@ if (rc !== 0) {
   if (rc !== 0) die("安装包构建失败（网络或签名配置问题），详见上方日志");
 }
 
-const setupName = "QingTiXing-Setup-" + VERSION + ".exe";
+const setupName = "QingLing-Setup-" + VERSION + ".exe";
 const setupPath = path.join(DESKTOP, "dist", setupName);
 if (!fs.existsSync(setupPath)) die("安装包产物缺失：" + setupPath);
 
@@ -211,7 +211,7 @@ if (!fs.existsSync(setupPath)) die("安装包产物缺失：" + setupPath);
 if (cert.mode !== "none") {
   log("②.5 签名安装包（内层程序 + 外层 Setup）…");
 
-  const innerExe = path.join(DESKTOP, "dist", "win-unpacked", "轻提醒.exe");
+  const innerExe = path.join(DESKTOP, "dist", "win-unpacked", "轻铃.exe");
   signQuiet(innerExe);
 
   /* NSIS 的中间产物必须清掉。
@@ -259,10 +259,10 @@ cpIfExists(path.join(dirDoc, "安装说明.txt"), path.join(dirSetup, "安装说
 copyDir(portableSrc, dirPort);
 cpIfExists(path.join(dirDoc, "绿色版说明.txt"), path.join(dirPort, "readme.txt"));
 
-const zipName = "QingTiXing_Portable_" + VERSION + ".zip";
+const zipName = "QingLing_Portable_" + VERSION + ".zip";
 const zipPath = path.join(REL, zipName);
 const entries = [];
-const TOP = "QingTiXing_Portable";
+const TOP = "QingLing_Portable";
 (function collect(dir, rel) {
   for (const name of fs.readdirSync(dir).sort()) {
     const full = path.join(dir, name);
@@ -302,7 +302,7 @@ if (noSync) {
   const r = require("child_process").spawnSync(process.execPath, [syncScript], { encoding: "utf8" });
   const out = ((r.stdout || "") + (r.stderr || "")).trim().split(/\r?\n/).filter(Boolean);
   out.forEach((line) => console.log("   " + line));
-  runState = r.status === 0 ? C.g("已同步到 轻提醒电脑版") : C.y("未完全同步，见上方提示");
+  runState = r.status === 0 ? C.g("已同步到 轻铃电脑版") : C.y("未完全同步，见上方提示");
 }
 log("本机运行目录：" + runState);
 

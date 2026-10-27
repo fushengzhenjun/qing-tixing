@@ -1,4 +1,4 @@
-/* 轻提醒 · 安装包图片素材生成
+/* 轻铃 · 安装包图片素材生成
    NSIS 只吃 24 位 BMP，这里把品牌 SVG 光栅化成像素再手写 BMP 头：
      · installerSidebar.bmp    164×314  安装向导左侧竖图
      · uninstallerSidebar.bmp  164×314  卸载向导左侧竖图
@@ -42,7 +42,7 @@ function sidebarSvg(title, sub) {
   <text x="82" y="196" text-anchor="middle" font-family="Microsoft YaHei, PingFang SC, sans-serif"
         font-size="21" font-weight="700" fill="#FFFFFF" letter-spacing="1.5">${title}</text>
   <text x="82" y="220" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif"
-        font-size="10.5" fill="#FFFFFF" fill-opacity="0.62" letter-spacing="2.6">QING TI XING</text>
+        font-size="10.5" fill="#FFFFFF" fill-opacity="0.62" letter-spacing="2.6">QING LING</text>
   <rect x="52" y="238" width="60" height="1" fill="#FFFFFF" fill-opacity="0.22"/>
   <text x="82" y="262" text-anchor="middle" font-family="Microsoft YaHei, PingFang SC, sans-serif"
         font-size="10" fill="#FFFFFF" fill-opacity="0.72">${sub}</text>
@@ -61,7 +61,7 @@ function headerSvg() {
     <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
   </g>
   <text x="50" y="28" font-family="Microsoft YaHei, PingFang SC, sans-serif"
-        font-size="13" font-weight="700" fill="#1D211F" letter-spacing="0.5">轻提醒</text>
+        font-size="13" font-weight="700" fill="#1D211F" letter-spacing="0.5">轻铃</text>
   <text x="50" y="41" font-family="Segoe UI, Arial, sans-serif"
         font-size="6.5" fill="#8A918C" letter-spacing="1.1">SIMPLE REMINDER</text>
 </svg>`;
@@ -111,8 +111,8 @@ async function writeBmp(svg, file, w, h) {
 (async () => {
   fs.mkdirSync(SHOTS, { recursive: true });
   const jobs = [
-    ["installerSidebar.bmp", sidebarSvg("轻提醒", "简单 · 干净 · 不联网"), 164, 314],
-    ["uninstallerSidebar.bmp", sidebarSvg("轻提醒", "卸载向导"), 164, 314],
+    ["installerSidebar.bmp", sidebarSvg("轻铃", "简单 · 干净 · 不联网"), 164, 314],
+    ["uninstallerSidebar.bmp", sidebarSvg("轻铃", "卸载向导"), 164, 314],
     ["installerHeader.bmp", headerSvg(), 150, 57]
   ];
   for (const [name, svg, w, h] of jobs) {

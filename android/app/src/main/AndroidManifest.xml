@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 轻提醒 · 安卓版
+<!-- 轻铃 · 安卓版
      权限只保留提醒必需的几项：没有任何联网权限，程序无法也不会上传数据。 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
@@ -23,14 +23,14 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:label="@string/app_name"
         android:supportsRtl="false"
-        android:theme="@style/Theme.QingTiXing">
+        android:theme="@style/Theme.QingLing">
 
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTask"
             android:windowSoftInputMode="adjustResize"
-            android:theme="@style/Theme.QingTiXing">
+            android:theme="@style/Theme.QingLing">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

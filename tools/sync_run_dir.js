@@ -7,7 +7,7 @@ const path = require("path");
 
 const ROOT = path.join(__dirname, "..");
 const SRC = path.join(ROOT, "发布", "绿色版");
-const DST = process.argv[2] || path.join(ROOT, "轻提醒电脑版");
+const DST = process.argv[2] || path.join(ROOT, "轻铃电脑版");
 
 if (!fs.existsSync(SRC)) {
   console.error("找不到绿色版目录：" + SRC + "（先跑一次 tools/release.js）");
@@ -48,12 +48,12 @@ try {
 
 /* 版本自证：写一份纯文本，方便不看界面也能确认 */
 const pkg = JSON.parse(fs.readFileSync(path.join(DST, "resources", "app", "package.json"), "utf8"));
-const html = fs.readFileSync(path.join(DST, "resources", "app", "轻提醒.html"), "utf8");
+const html = fs.readFileSync(path.join(DST, "resources", "app", "轻铃.html"), "utf8");
 const inHtml = (html.match(/APP_VERSION="([^"]*)"/) || [])[1] || "?";
 fs.writeFileSync(
   path.join(DST, "版本.txt"),
   [
-    "轻提醒 " + pkg.version,
+    "轻铃 " + pkg.version,
     "",
     "本目录当前版本：" + pkg.version,
     "界面里显示的版本：v" + inHtml,

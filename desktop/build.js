@@ -1,7 +1,7 @@
-/* 轻提醒 · 绿色版打包脚本
+/* 轻铃 · 绿色版打包脚本
    1) 同步最新 HTML 到工程目录
    2) 用 sharp 由 SVG 生成多尺寸图标，再合成 Windows ico
-   3) 用 @electron/packager 产出免安装的绿色程序（输出 desktop\release\轻提醒-win32-x64）
+   3) 用 @electron/packager 产出免安装的绿色程序（输出 desktop\release\轻铃-win32-x64）
    4) 自检：确认没有把 node_modules / dist / 构建脚本 / 安装包打进程序目录 */
 const path = require("path");
 const fs = require("fs");
@@ -10,7 +10,7 @@ const pngToIco = require("png-to-ico");
 const packager = require("@electron/packager");
 
 const ROOT = __dirname;
-const SRC_HTML = path.join(path.dirname(ROOT), "轻提醒.html"); // D:\轻提醒\轻提醒.html
+const SRC_HTML = path.join(path.dirname(ROOT), "轻铃.html"); // D:\轻提醒\轻铃.html
 const ICON_ICO = path.join(ROOT, "icon.ico");
 const OUT_DIR = path.join(ROOT, "release");
 const VERSION = require("./package.json").version;
@@ -55,7 +55,7 @@ function verify(appDir) {
         } else {
           walk(full, r);
         }
-      } else if (/^(QingTiXing-Setup|setup|Uninstall).*\.exe$/i.test(name)) {
+      } else if (/^(Qing(Ling|TiXing)-Setup|setup|Uninstall).*\.exe$/i.test(name)) {
         bad.push(r + "  (安装包被打进程序目录)");
       } else if (/\.(7z|blockmap|nsh|ps1)$/i.test(name)) {
         bad.push(r + "  (构建中间产物)");
@@ -69,15 +69,15 @@ function verify(appDir) {
 
   /* 版本号自检：打包进去的界面必须带正确版本，且不能残留占位符
      注意：界面文件在 resources/app 下，不是程序根目录 */
-  const htmlInApp = path.join(appDir, "resources", "app", "轻提醒.html");
+  const htmlInApp = path.join(appDir, "resources", "app", "轻铃.html");
   if (fs.existsSync(htmlInApp)) {
     const h = fs.readFileSync(htmlInApp, "utf8");
-    if (h.indexOf("{{VERSION}}") >= 0) bad.push("轻提醒.html  (版本占位符没替换)");
+    if (h.indexOf("{{VERSION}}") >= 0) bad.push("轻铃.html  (版本占位符没替换)");
     if (h.indexOf('APP_VERSION="' + VERSION + '"') < 0) {
-      bad.push("轻提醒.html  (界面版本号不是 " + VERSION + ")");
+      bad.push("轻铃.html  (界面版本号不是 " + VERSION + ")");
     }
   } else {
-    bad.push("轻提醒.html  (程序里找不到界面文件)");
+    bad.push("轻铃.html  (程序里找不到界面文件)");
   }
 
   let total = 0;
@@ -104,7 +104,7 @@ function verify(appDir) {
   /* 绿色版标记：有这个文件就走便携模式，数据写在 exe 同目录 */
   fs.writeFileSync(
     path.join(appDir, "portable.flag"),
-    "轻提醒 便携模式标记\r\n有本文件时，提醒数据保存在本目录的「数据」文件夹，可随 U 盘带走。\r\n"
+    "轻铃 便携模式标记\r\n有本文件时，提醒数据保存在本目录的「数据」文件夹，可随 U 盘带走。\r\n"
   );
   return total;
 }
@@ -137,8 +137,8 @@ async function main() {
       process.exit(1);
     }
     html = html.split("{{VERSION}}").join(VERSION);
-    fs.writeFileSync(path.join(ROOT, "轻提醒.html"), html, "utf8");
-    console.log("[copy] 已同步最新 轻提醒.html（版本 " + VERSION + " 注入 " + hits + " 处）");
+    fs.writeFileSync(path.join(ROOT, "轻铃.html"), html, "utf8");
+    console.log("[copy] 已同步最新 轻铃.html（版本 " + VERSION + " 注入 " + hits + " 处）");
   }
 
   await ensureIcon();
@@ -147,7 +147,7 @@ async function main() {
 
   const appPaths = await packager({
     dir: ROOT,
-    name: "轻提醒",
+    name: "轻铃",
     platform: "win32",
     arch: "x64",
     out: OUT_DIR,
@@ -172,10 +172,10 @@ async function main() {
     ],
     win32metadata: {
       CompanyName: "fushengzhenjun",
-      FileDescription: "轻提醒 · 简洁无广告的定时提醒",
-      ProductName: "轻提醒",
-      OriginalFilename: "轻提醒.exe",
-      InternalName: "轻提醒",
+      FileDescription: "轻铃 · 简洁无广告的定时提醒",
+      ProductName: "轻铃",
+      OriginalFilename: "轻铃.exe",
+      InternalName: "轻铃",
       FileVersion: VERSION,
       ProductVersion: VERSION,
       LegalCopyright: "Copyright © 2026 fushengzhenjun"

@@ -64,7 +64,7 @@ fun HomeScreen(
             TopAppBar(
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("轻提醒", fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                        Text("轻铃", fontWeight = FontWeight.Bold, fontSize = 20.sp)
                         Spacer(Modifier.width(8.dp))
                         Text(
                             "v$versionName",

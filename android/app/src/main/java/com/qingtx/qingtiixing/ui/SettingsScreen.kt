@@ -113,10 +113,10 @@ fun SettingsScreen(
                     Text("小米 / 华为 / OPPO / vivo 用户看这里", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        "这些系统会额外「优化」后台应用。除了上面的电池优化，还要在系统设置里给轻提醒打开：\n" +
+                        "这些系统会额外「优化」后台应用。除了上面的电池优化，还要在系统设置里给轻铃打开：\n" +
                             "· 自启动 / 允许后台活动\n" +
                             "· 通知管理里的「横幅通知」\n" +
-                            "· 最近任务里给轻提醒「加锁」，避免一键清理时被杀掉",
+                            "· 最近任务里给轻铃「加锁」，避免一键清理时被杀掉",
                         fontSize = 13.sp,
                         lineHeight = 20.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -132,7 +132,7 @@ fun SettingsScreen(
             ) {
                 Column(Modifier.padding(16.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("轻提醒", fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+                        Text("轻铃", fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
                         Spacer(Modifier.width(8.dp))
                         Text(
                             "v$versionName",

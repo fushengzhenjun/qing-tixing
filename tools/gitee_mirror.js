@@ -71,7 +71,7 @@ async function api(method, p, body) {
         access_token: TOKEN,
         name: REPO,
         path: REPO,
-        description: "轻提醒 · 到点了就该看得见的桌面提醒工具（国内镜像，源码 MIT）",
+        description: "轻铃 · 到点了就该看得见的桌面提醒工具（国内镜像，源码 MIT）",
         homepage: "https://fushengzhenjun.github.io/qing-tixing/",
         has_issues: true,
         has_wiki: false,
@@ -140,7 +140,7 @@ async function api(method, p, body) {
   const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, "desktop", "package.json"), "utf8"));
   const tag = "v" + pkg.version;
   const notesPath = path.join(ROOT, "release_notes.md");
-  const body = fs.existsSync(notesPath) ? fs.readFileSync(notesPath, "utf8") : `轻提醒 ${tag}`;
+  const body = fs.existsSync(notesPath) ? fs.readFileSync(notesPath, "utf8") : `轻铃 ${tag}`;
 
   let rel = await api("GET", `/repos/${login}/${REPO}/releases/tags/${tag}?access_token=${TOKEN}`);
   if (rel.ok && rel.data && rel.data.id) {
@@ -149,7 +149,7 @@ async function api(method, p, body) {
     const created = await api("POST", `/repos/${login}/${REPO}/releases`, {
       access_token: TOKEN,
       tag_name: tag,
-      name: `${tag} 提醒弹到屏幕上`,
+      name: `${tag} 轻铃`,
       body,
       target_commitish: "main",
       prerelease: false
@@ -165,9 +165,10 @@ async function api(method, p, body) {
 
   /* ---------- 5. 上传附件 ---------- */
   step(5, "上传附件");
+  /* 文件名按版本号拼，不要写死，否则发新版会静默跳过（提示「不存在」） */
   const files = [
-    ["发布/安装包/QingTiXing-Setup-1.5.0.exe", "安装包 · Windows 10/11"],
-    ["发布/SHA256-1.5.0.txt", "校验值"]
+    [`发布/安装包/QingLing-Setup-${pkg.version}.exe`, "安装包 · Windows 10/11"],
+    [`发布/SHA256-${pkg.version}.txt`, "校验值"]
   ];
   for (const [relPath, label] of files) {
     const abs = path.join(ROOT, relPath);

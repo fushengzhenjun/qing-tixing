@@ -1,4 +1,4 @@
-# 轻提醒 QingTiXing
+# 轻铃 QingLing
 
 一款简单、干净、**完全离线**的到点提醒工具。不注册、不联网、不收集任何数据。
 
@@ -11,8 +11,8 @@
 
 **国内访问 GitHub 常不稳定，建议走 Gitee 镜像，点下面的文件名直接下载：**
 
-- 安装版（推荐）：[QingTiXing-Setup-1.5.0.exe](https://gitee.com/fushengbanrizhenjun/qing-tixing/releases/download/v1.5.0/QingTiXing-Setup-1.5.0.exe)
-- 校验值：[SHA256-1.5.0.txt](https://gitee.com/fushengbanrizhenjun/qing-tixing/releases/download/v1.5.0/SHA256-1.5.0.txt)
+- 安装版（推荐）：[QingLing-Setup-1.6.0.exe](https://gitee.com/fushengbanrizhenjun/qing-tixing/releases/download/v1.6.0/QingLing-Setup-1.6.0.exe)
+- 校验值：[SHA256-1.6.0.txt](https://gitee.com/fushengbanrizhenjun/qing-tixing/releases/download/v1.6.0/SHA256-1.6.0.txt)
 - 镜像仓库：https://gitee.com/fushengbanrizhenjun/qing-tixing
 
 两个地址的文件内容完全一致（可用 SHA256 互校）。镜像只托管安装包与源码副本，**不涉及任何联网功能**。
@@ -21,9 +21,9 @@
 
 | 版本 | 文件 | 说明 |
 |---|---|---|
-| 安装版（推荐） | `QingTiXing-Setup-x.y.z.exe` | 向导式安装，可自选安装目录，当前用户安装、无需管理员权限 |
-| 绿色版 | `QingTiXing_Portable_x.y.z.zip` | 解压即用，数据写在程序目录 |
-| 安卓版 | `QingTiXing-x.y.z.apk` | 侧载安装，需允许"未知来源" |
+| 安装版（推荐） | `QingLing-Setup-x.y.z.exe` | 向导式安装，可自选安装目录，当前用户安装、无需管理员权限 |
+| 绿色版 | `QingLing_Portable_x.y.z.zip` | 解压即用，数据写在程序目录 |
+| 安卓版 | `QingLing-x.y.z.apk` | 侧载安装，需允许"未知来源" |
 
 **官方发布渠道只有上述两个仓库的 Releases 和 Pages 站点。** 其他任何地方下载到的都非官方版本。
 
@@ -50,13 +50,13 @@
 ## 目录结构
 
 ```
-轻提醒.html          桌面版界面（唯一编辑源，单文件）
+轻铃.html          桌面版界面（唯一编辑源，单文件）
 desktop/             Electron 外壳、打包脚本、自测
 android/             安卓版（原生 Kotlin + Compose）
 tools/               出包、签名、同步、素材生成脚本
 ```
 
-`desktop/轻提醒.html` 由 `desktop/build.js` 从根目录那份注入版本号生成，不进仓库。
+`desktop/轻铃.html` 由 `desktop/build.js` 从根目录那份注入版本号生成，不进仓库。
 
 ## 构建
 
@@ -82,7 +82,7 @@ cd android
 
 完全免费、开源、无广告、无账号、不联网，提醒数据只保存在本机。
 
-- 桌面版数据：`%APPDATA%\轻提醒\`
+- 桌面版数据：`%APPDATA%\轻铃\`
 - 安卓版数据：应用私有目录 `filesDir/reminders.json`
 
 完整说明见 [隐私政策](https://fushengzhenjun.github.io/qing-tixing/privacy.html)。

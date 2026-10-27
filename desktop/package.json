@@ -1,7 +1,7 @@
 {
   "name": "qing-ti-xing",
-  "productName": "轻提醒",
-  "version": "1.5.0",
+  "productName": "轻铃",
+  "version": "1.6.0",
   "description": "简单、简洁、无广告的定时提醒",
   "main": "main.js",
   "author": "fushengzhenjun",
@@ -16,7 +16,7 @@
   },
   "build": {
     "appId": "com.qingtx.qingtiixing",
-    "productName": "轻提醒",
+    "productName": "轻铃",
     "copyright": "Copyright © 2026 fushengzhenjun",
     "electronLanguages": [
       "zh-CN",
@@ -28,7 +28,7 @@
     "files": [
       "main.js",
       "preload.js",
-      "轻提醒.html",
+      "轻铃.html",
       "alarm.html",
       "quick.html",
       "icon.ico",
@@ -44,8 +44,8 @@
         }
       ],
       "icon": "icon.ico",
-      "artifactName": "QingTiXing-Setup-${version}.${ext}",
-      "legalTrademarks": "轻提醒",
+      "artifactName": "QingLing-Setup-${version}.${ext}",
+      "legalTrademarks": "轻铃",
       "requestedExecutionLevel": "asInvoker"
     },
     "nsis": {
@@ -55,8 +55,8 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": "always",
       "createStartMenuShortcut": true,
-      "shortcutName": "轻提醒",
-      "uninstallDisplayName": "轻提醒 ${version}",
+      "shortcutName": "轻铃",
+      "uninstallDisplayName": "轻铃 ${version}",
       "deleteAppDataOnUninstall": false,
       "installerIcon": "icon.ico",
       "uninstallerIcon": "icon.ico",
@@ -69,7 +69,7 @@
       ],
       "language": "2052",
       "include": "installer.nsh",
-      "artifactName": "QingTiXing-Setup-${version}.${ext}"
+      "artifactName": "QingLing-Setup-${version}.${ext}"
     }
   },
   "devDependencies": {

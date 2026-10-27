@@ -1,4 +1,4 @@
-﻿; 轻提醒 · NSIS 安装/卸载钩子
+﻿; 轻铃 · NSIS 安装/卸载钩子
 ;
 ; 编码要求：本文件必须保存为 **UTF-8 with BOM**。
 ;   makensis 靠 BOM 判断源码编码，没有 BOM 的中文会变成乱码；
@@ -19,11 +19,11 @@
   ; 静默卸载（/S）不弹窗，也不删数据，避免批处理脚本误删
   ${ifNot} ${Silent}
     MessageBox MB_YESNO|MB_ICONEXCLAMATION \
-      "是否一并删除提醒数据？$\r$\n$\r$\n是：删除所有提醒、设置和历史备份，删除后无法恢复。$\r$\n否：保留数据，以后重新安装还能接着用。$\r$\n$\r$\n（目录：$APPDATA\轻提醒）" \
+      "是否一并删除提醒数据？$\r$\n$\r$\n是：删除所有提醒、设置和历史备份，删除后无法恢复。$\r$\n否：保留数据，以后重新安装还能接着用。$\r$\n$\r$\n（目录：$APPDATA\轻铃）" \
       /SD IDNO IDNO qtxKeepData
 
-      RMDir /r "$APPDATA\轻提醒"
-      RMDir /r "$LOCALAPPDATA\轻提醒"
+      RMDir /r "$APPDATA\轻铃"
+      RMDir /r "$LOCALAPPDATA\轻铃"
     qtxKeepData:
   ${endif}
 !macroend

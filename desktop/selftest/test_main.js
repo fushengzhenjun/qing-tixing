@@ -1,4 +1,4 @@
-/* 轻提醒 · 补提醒 / 暂停 自动化验证
+/* 轻铃 · 补提醒 / 暂停 自动化验证
    运行：electron selftest/test_main.js */
 const { app, BrowserWindow, ipcMain } = require("electron");
 const path = require("path");
@@ -64,7 +64,7 @@ app.whenReady().then(async () => {
 
   win.webContents.on("console-message", (_e, _lvl, msg) => console.log("[page]", msg));
 
-  const file = path.join(__dirname, "..", "..", "_audit", "轻提醒.selftest.html");
+  const file = path.join(__dirname, "..", "..", "_audit", "轻铃.selftest.html");
   if (!fs.existsSync(file)) throw new Error("缺少自检副本，先运行 node selftest/make.js");
   await win.loadFile(file);
   await sleep(600);
@@ -303,7 +303,7 @@ app.whenReady().then(async () => {
       var mt = Q.mailtoLink();
       out.mailtoPrefix = mt.indexOf("mailto:" + Q.contactEmail() + "?subject=") === 0;
       out.mailtoHasBody = mt.indexOf("&body=") > 0;
-      out.mailtoEncoded = /%E8%BD%BB%E6%8F%90%E9%86%92/.test(mt);   /* 「轻提醒」的 URL 编码 */
+      out.mailtoEncoded = /%E8%BD%BB%E9%93%83/.test(mt);   /* 「轻铃」的 URL 编码 */
       var diag = Q.feedbackInfo();
       out.diagHasVer  = diag.indexOf("v" + Q.getVersion()) >= 0;
       out.diagHasOS   = /系统：\\S+/.test(diag);
@@ -483,7 +483,7 @@ app.whenReady().then(async () => {
                         /^\d/.test(String(alarmShows[0].timeText || "")));
   res.bgLoadsSeen  = bgLoads.length;
   res.icsSavedName = icsSaved && icsSaved.name;
-  res.icsSavedOk   = !!(icsSaved && /^轻提醒-\d{4}-\d{2}-\d{2}\.ics$/.test(icsSaved.name) &&
+  res.icsSavedOk   = !!(icsSaved && /^轻铃-\d{4}-\d{2}-\d{2}\.ics$/.test(icsSaved.name) &&
                         /BEGIN:VCALENDAR/.test(icsSaved.content) &&
                         /BEGIN:VEVENT/.test(icsSaved.content));
 

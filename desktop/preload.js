@@ -1,4 +1,4 @@
-/* 轻提醒 · 预加载桥
+/* 轻铃 · 预加载桥
    在保持 contextIsolation / sandbox 安全隔离的前提下，
    仅把桌面端（Electron）专属能力暴露给页面；浏览器打开时 window.qingtx 不存在。 */
 const { contextBridge, ipcRenderer } = require("electron");

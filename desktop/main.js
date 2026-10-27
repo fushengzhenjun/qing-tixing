@@ -1,5 +1,5 @@
-/* 轻提醒 · Electron 主进程（桌面壳）
-   纯本地、离线、无广告；数据默认存 %APPDATA%\轻提醒，绿色版可切便携模式。
+/* 轻铃 · Electron 主进程（桌面壳）
+   纯本地、离线、无广告；数据默认存 %APPDATA%\轻铃，绿色版可切便携模式。
    点关闭 → 最小化到系统托盘，后台继续到点提醒；托盘菜单可退出。 */
 const { app, BrowserWindow, Menu, Tray, nativeImage, ipcMain, globalShortcut, screen, shell, dialog } = require("electron");
 const path = require("path");
@@ -9,7 +9,7 @@ const fs = require("fs");
 const ALLOW_HOSTS = ["github.com", "www.github.com", "gitee.com", "www.gitee.com"];
 
 /* 用户数据目录
-   · 安装版：%APPDATA%\轻提醒（跟随当前用户，不依赖 D 盘，任何电脑都能用）
+   · 安装版：%APPDATA%\轻铃（跟随当前用户，不依赖 D 盘，任何电脑都能用）
    · 绿色版：exe 同目录放 portable.flag → 数据写在 exe 同目录的「数据」文件夹，可随 U 盘带走
    · 旧版 v1.0.0 曾把数据硬编码在 D:\轻提醒\轻提醒数据，首次启动自动迁移，老用户不丢数据 */
 let DATA_DIR = null;
@@ -19,17 +19,28 @@ let DATA_DIR = null;
     const portable = app.isPackaged && fs.existsSync(path.join(exeDir, "portable.flag"));
     const dataDir = portable
       ? path.join(exeDir, "数据")
-      : path.join(app.getPath("appData"), "轻提醒");
+      : path.join(app.getPath("appData"), "轻铃");
 
     fs.mkdirSync(dataDir, { recursive: true });
 
-    /* 仅在目标目录还没有数据时迁移，绝不覆盖用户现有数据 */
-    const LEGACY_DIR = "D:\\轻提醒\\轻提醒数据";
+    /* 仅在目标目录还没有数据时迁移，绝不覆盖用户现有数据。
+       两个历史位置都要认，否则改名对老用户等于清空了数据：
+         · v1.5.0 及以前：%APPDATA%\轻提醒（改名为轻铃后这个目录不再被读取）
+         · v1.0.0：把数据硬编码在 D:\轻提醒\轻提醒数据 */
+    const LEGACY_DIRS = [
+      path.join(app.getPath("appData"), "轻提醒"),
+      "D:\\轻提醒\\轻提醒数据"
+    ];
     try {
       const hasData = (d) => fs.existsSync(path.join(d, "Local Storage"));
-      if (!portable && path.resolve(LEGACY_DIR) !== path.resolve(dataDir) &&
-          !hasData(dataDir) && hasData(LEGACY_DIR)) {
-        fs.cpSync(LEGACY_DIR, dataDir, { recursive: true, force: false });
+      if (!portable && !hasData(dataDir)) {
+        for (const from of LEGACY_DIRS) {
+          if (path.resolve(from) === path.resolve(dataDir)) continue;
+          if (hasData(from)) {
+            fs.cpSync(from, dataDir, { recursive: true, force: false });
+            break;
+          }
+        }
       }
     } catch (e) {}
 
@@ -64,7 +75,7 @@ if (!gotLock) {
       height: 720,
       minWidth: 860,
       minHeight: 560,
-      title: "轻提醒",
+      title: "轻铃",
       backgroundColor: "#F6F5F1",
       autoHideMenuBar: true,
       show: false,
@@ -99,7 +110,7 @@ if (!gotLock) {
         try {
           tray.displayBalloon({
             iconType: "info",
-            title: "轻提醒仍在后台运行",
+            title: "轻铃仍在后台运行",
             content: "已最小化到托盘，到点会照常提醒你；右键托盘图标可退出。"
           });
         } catch (err) {}
@@ -115,7 +126,7 @@ if (!gotLock) {
       return { action: "deny" };
     });
 
-    win.loadFile("轻提醒.html");
+    win.loadFile("轻铃.html");
 
     /* 快速添加的提醒如果比页面更早到达，先存下来，加载完再补发 */
     win.webContents.on("did-finish-load", () => {
@@ -210,12 +221,12 @@ if (!gotLock) {
     let img = nativeImage.createFromPath(iconPath);
     if (!img.isEmpty()) img = img.resize({ width: 16, height: 16 });
     tray = new Tray(img.isEmpty() ? nativeImage.createEmpty() : img);
-    tray.setToolTip("轻提醒 · 后台运行中");
+    tray.setToolTip("轻铃 · 后台运行中");
 
     function buildMenu() {
       const openAtLogin = isAutoLaunchOn();
       return Menu.buildFromTemplate([
-        { label: "打开轻提醒", click: showWindow },
+        { label: "打开轻铃", click: showWindow },
         { label: "快速添加提醒（Ctrl+Alt+N）", click: () => showQuickAdd() },
         {
           label: "开机自动启动",
@@ -228,7 +239,7 @@ if (!gotLock) {
         },
         { type: "separator" },
         {
-          label: "退出轻提醒",
+          label: "退出轻铃",
           click: () => {
             isQuiting = true;
             app.quit();
@@ -302,7 +313,7 @@ if (!gotLock) {
         if (!tray || tray.isDestroyed()) return;
         tray.displayBalloon({
           iconType: "info",
-          title: "轻提醒已在后台运行",
+          title: "轻铃已在后台运行",
           content: "开机启动时不弹窗，到点会照常提醒。点这个托盘图标可以打开主界面。"
         });
       }, 2500);
@@ -724,7 +735,7 @@ if (!gotLock) {
      存成文件 → 发到手机 / 拖进日历，就同步过去了。 */
   ipcMain.handle("export:ics", async (_e, arg) => {
     const content = String((arg && arg.content) || "");
-    const suggest = String((arg && arg.name) || "轻提醒.ics");
+    const suggest = String((arg && arg.name) || "轻铃.ics");
     if (!content) return { ok: false, reason: "empty" };
     try {
       const ret = await dialog.showSaveDialog(win, {
@@ -757,7 +768,7 @@ if (!gotLock) {
 
   /* 窗口关闭后仍驻留托盘（退出由托盘菜单控制） */
   app.on("window-all-closed", () => {
-    // 不退出：轻提醒需要后台常驻
+    // 不退出：轻铃需要后台常驻
   });
 
   /* 退出时注销全局快捷键，避免占用 */

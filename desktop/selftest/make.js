@@ -1,10 +1,10 @@
 /* 生成自检副本：把内部函数挂到 window.__qx，仅用于自动化验证。
-   正式文件 轻提醒.html 不含任何测试代码。 */
+   正式文件 轻铃.html 不含任何测试代码。 */
 const fs = require("fs");
 const path = require("path");
 
-const SRC = path.join(__dirname, "..", "..", "轻提醒.html");   /* 根目录才是编辑源，build 时同步到工程目录 */
-const OUT = path.join(__dirname, "..", "..", "_audit", "轻提醒.selftest.html");
+const SRC = path.join(__dirname, "..", "..", "轻铃.html");   /* 根目录才是编辑源，build 时同步到工程目录 */
+const OUT = path.join(__dirname, "..", "..", "_audit", "轻铃.selftest.html");
 
 let html = fs.readFileSync(SRC, "utf8");
 /* 与正式构建一致：把 package.json 的版本号注入进去 */
