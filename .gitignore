@@ -1,0 +1,48 @@
+# ============================================================
+# 轻提醒 · 不进仓库的东西
+# 原则：只留"人写的东西"。凡是由脚本生成、体积大、或涉及密钥的，一律排除。
+# ============================================================
+
+# ---------- 生成物 ----------
+# desktop/轻提醒.html 由 desktop/build.js 从根目录 轻提醒.html 注入版本号生成，
+# 根目录那份才是编辑源。两份都提交的话，改一处漏一处。
+desktop/轻提醒.html
+desktop/selftest/轻提醒.selftest.html
+
+# ---------- 构建中间产物 ----------
+desktop/dist/
+desktop/release/
+desktop/node_modules/
+android/.gradle/
+android/.kotlin/
+android/build/
+android/app/build/
+android/local.properties
+android/.idea/
+
+# ---------- 发布物：体积大，走 GitHub Release 附件 ----------
+发布/
+轻提醒电脑版/
+轻提醒数据/
+
+# ---------- 密钥与证书：绝对不能提交 ----------
+.signing.json
+.signing-android/
+android/keystore.properties
+*.jks
+*.keystore
+*.pfx
+*.p12
+
+# ---------- 开发过程产物 ----------
+_audit/
+_backup/
+store-shots/
+
+# ---------- 本机个人脚本（含本机路径与账号流程，与产品无关） ----------
+gh_login.py
+gh_upload_site.py
+
+# ---------- 系统 ----------
+Thumbs.db
+.DS_Store
