@@ -48,7 +48,7 @@ app.whenReady().then(async () => {
   /* 每次从干净状态开始，避免上一轮测试数据影响截图 */
   await win.webContents.session.clearStorageData({ storages: ["localstorage", "indexdb"] });
 
-  await win.loadFile(path.join(__dirname, "..", "..", "_audit", "轻提醒.selftest.html"));
+  await win.loadFile(path.join(__dirname, "..", "..", "_audit", "轻铃.selftest.html"));
   await sleep(700);
 
   /* 1. 主界面 + 暂停横幅：用界面按钮触发，保证高亮与倒计时一致 */
@@ -74,7 +74,7 @@ app.whenReady().then(async () => {
   await shoot(win, "03_settings_tomorrow");
 
   /* 4. 补提醒弹层（模拟合盖错过）：重新加载页面，避免受前面弹层关闭动画干扰 */
-  await win.loadFile(path.join(__dirname, "..", "..", "_audit", "轻提醒.selftest.html"));
+  await win.loadFile(path.join(__dirname, "..", "..", "_audit", "轻铃.selftest.html"));
   await sleep(800);
   const st4 = await win.webContents.executeJavaScript(`
     (function(){

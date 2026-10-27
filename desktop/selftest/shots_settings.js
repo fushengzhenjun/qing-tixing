@@ -74,7 +74,7 @@ app.whenReady().then(async () => {
   win.webContents.on("console-message", (_e, lv, msg) => { if (lv >= 2) console.log("[renderer] " + msg); });
 
   await win.webContents.session.clearStorageData({ storages: ["localstorage", "indexdb"] });
-  const file = path.join(__dirname, "..", "轻提醒.html");
+  const file = path.join(__dirname, "..", "轻铃.html");
   await win.loadFile(file);
   await sleep(900);
 

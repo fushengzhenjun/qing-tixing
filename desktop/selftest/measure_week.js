@@ -24,7 +24,7 @@ app.whenReady().then(async () => {
       contextIsolation: true, nodeIntegration: false, sandbox: true, offscreen: true,
     },
   });
-  await win.loadFile(path.join(__dirname, "..", "轻提醒.html"));
+  await win.loadFile(path.join(__dirname, "..", "轻铃.html"));
   await sleep(900);
   await win.webContents.executeJavaScript(`document.querySelector('#viewSeg [data-view="week"]').click();`);
   await sleep(600);

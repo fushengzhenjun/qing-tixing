@@ -172,7 +172,7 @@ async function main() {
     ],
     win32metadata: {
       CompanyName: "fushengzhenjun",
-      FileDescription: "轻铃 · 简洁无广告的定时提醒",
+      FileDescription: "轻铃 · 到点提醒",
       ProductName: "轻铃",
       OriginalFilename: "轻铃.exe",
       InternalName: "轻铃",

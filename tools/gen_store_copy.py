@@ -23,7 +23,7 @@ def unescape(x):
 
 
 lines = []
-lines.append("轻提醒 · 商店表单文案（直接复制粘贴）")
+lines.append("轻铃 · 商店表单文案（直接复制粘贴）")
 lines.append("版本 1.0.1 · 生成自 上架指南.html")
 lines.append("=" * 64)
 for t, h, v in items:

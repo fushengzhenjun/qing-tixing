@@ -13,7 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
-/* 配色与电脑版一致：墨绿主色 + 米白底。改这里之前先对一下 轻提醒.html 的 :root 变量。
+/* 配色与电脑版一致：墨绿主色 + 米白底。改这里之前先对一下 轻铃.html 的 :root 变量。
    secondaryContainer 必须显式给值：Material3 的 FilterChip 选中态用的就是它，
    不写会退回框架默认的紫色，和品牌绿打架（第一版就是这样）。 */
 private val LightScheme = lightColorScheme(

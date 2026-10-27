@@ -85,7 +85,7 @@ app.whenReady().then(async () => {
   win.webContents.on("console-message", (_e, lv, msg) => { if (lv >= 2) console.log("[renderer] " + msg); });
 
   await win.webContents.session.clearStorageData({ storages: ["localstorage", "indexdb"] });
-  await win.loadFile(path.join(__dirname, "..", "轻提醒.html"));
+  await win.loadFile(path.join(__dirname, "..", "轻铃.html"));
   await sleep(600);
   await win.webContents.executeJavaScript(
     "localStorage.setItem('qingtx.reminders.v2', " + JSON.stringify(JSON.stringify(DATA)) + ");" +

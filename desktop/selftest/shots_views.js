@@ -92,7 +92,7 @@ app.whenReady().then(async () => {
   });
 
   await win.webContents.session.clearStorageData({ storages: ["localstorage", "indexdb"] });
-  await win.loadFile(path.join(__dirname, "..", "轻提醒.html"));
+  await win.loadFile(path.join(__dirname, "..", "轻铃.html"));
   await sleep(600);
 
   await win.webContents.executeJavaScript(
