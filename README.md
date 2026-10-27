@@ -9,6 +9,13 @@
 
 ## 下载
 
+**国内访问 GitHub 常不稳定，建议走 Gitee 镜像：**
+
+- 镜像仓库：https://gitee.com/fushengbanrizhenjun/qing-tixing
+- 镜像下载：https://gitee.com/fushengbanrizhenjun/qing-tixing/releases/latest
+
+两个地址的文件内容完全一致（可用 SHA256 互校）。镜像只托管安装包与源码副本，**不涉及任何联网功能**。
+
 前往 [Releases](https://github.com/fushengzhenjun/qing-tixing/releases) 下载最新版本：
 
 | 版本 | 文件 | 说明 |
@@ -17,7 +24,7 @@
 | 绿色版 | `QingTiXing_Portable_x.y.z.zip` | 解压即用，数据写在程序目录 |
 | 安卓版 | `QingTiXing-x.y.z.apk` | 侧载安装，需允许"未知来源" |
 
-**官方发布渠道只有本仓库的 Releases 和上面的 Pages 站点。** 其他任何地方下载到的都非官方版本。
+**官方发布渠道只有上述两个仓库的 Releases 和 Pages 站点。** 其他任何地方下载到的都非官方版本。
 
 ## 桌面版功能
 
