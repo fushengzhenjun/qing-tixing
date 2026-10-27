@@ -66,7 +66,11 @@ object Notifier {
         channel(CH_SILENT, "提醒 · 静音", "只弹通知，不出声不振动", sound = false, alarmSound = false, vibrate = false)
     }
 
-    fun show(context: Context, r: Reminder) {
+    /**
+     * @param silent 夜间免打扰时段内强制走静音渠道。渠道的声音是建渠道时定死的，
+     *               运行时改不了，所以只能换渠道；通知本身照常弹出、照常记录。
+     */
+    fun show(context: Context, r: Reminder, silent: Boolean = false) {
         val nm = context.getSystemService(NotificationManager::class.java) ?: return
 
         val open = PendingIntent.getActivity(
@@ -94,7 +98,7 @@ object Notifier {
 
         val body = if (r.type == com.qingtx.qingtiixing.data.ReminderType.ONCE) Fmt.rule(r) else Fmt.rule(r)
 
-        val n = NotificationCompat.Builder(context, channelFor(r.ring))
+        val n = NotificationCompat.Builder(context, if (silent) CH_SILENT else channelFor(r.ring))
             .setSmallIcon(R.drawable.ic_stat_bell)
             .setContentTitle(r.title.ifBlank { "提醒" })
             .setContentText(body)

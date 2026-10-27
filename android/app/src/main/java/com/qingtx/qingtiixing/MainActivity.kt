@@ -21,6 +21,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
@@ -28,7 +29,9 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.qingtx.qingtiixing.alarm.Scheduler
 import com.qingtx.qingtiixing.data.Reminder
+import com.qingtx.qingtiixing.data.Settings as AppPrefs
 import com.qingtx.qingtiixing.data.Store
+import com.qingtx.qingtiixing.data.ThemeMode
 import com.qingtx.qingtiixing.ui.EditorScreen
 import com.qingtx.qingtiixing.ui.HomeScreen
 import com.qingtx.qingtiixing.ui.QtxTheme
@@ -39,8 +42,15 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        AppPrefs.init(this)
         setContent {
-            QtxTheme {
+            val prefs by AppPrefs.flow.collectAsState()
+            val dark = when (prefs.theme) {
+                ThemeMode.SYSTEM -> isSystemInDarkTheme()
+                ThemeMode.LIGHT -> false
+                ThemeMode.DARK -> true
+            }
+            QtxTheme(dark = dark) {
                 AppRoot()
             }
         }
@@ -65,6 +75,7 @@ private fun AppRoot() {
     /* 提醒列表直接订阅 Store 的 flow：闹钟响过之后 Receiver 会把单次提醒改成停用，
        界面不用等 onResume 就能立刻看到状态变化 */
     val list by Store.flow.collectAsState()
+    val prefs by AppPrefs.flow.collectAsState()
 
     var screen by remember { mutableStateOf<Screen>(Screen.Home) }
     var notifGranted by remember { mutableStateOf(hasNotif(ctx)) }
@@ -101,6 +112,8 @@ private fun AppRoot() {
     when (val s = screen) {
         is Screen.Home -> {
             val warn = when {
+                /* 暂停是用户自己按下的，优先级高于权限提醒——不然他会以为软件坏了 */
+                prefs.pausedNow() -> "全部提醒已暂停，到点不会响 → 点这里恢复"
                 !notifGranted -> "通知权限没开，到点了不会提醒你 → 点这里开启"
                 !exactOk -> "精确闹钟未允许，提醒可能延迟 → 点这里允许"
                 !batteryOk -> "系统可能冻结后台，提醒会不准 → 点这里设置"
@@ -148,6 +161,7 @@ private fun AppRoot() {
             notifGranted = notifGranted,
             exactOk = exactOk,
             batteryOk = batteryOk,
+            prefs = prefs,
             onRequestNotif = {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     notifLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
@@ -166,6 +180,14 @@ private fun AppRoot() {
                 }
             },
             onRequestBattery = { requestBatteryExemption(ctx) },
+            onPauseToggle = { on ->
+                /* 打开时先给个默认值：暂停 1 小时。用户可以在下面几档里改 */
+                AppPrefs.setPauseAll(on, if (on) AppPrefs.untilFrom(60) else 0L)
+            },
+            onPauseDuration = { minutes -> AppPrefs.setPauseAll(true, AppPrefs.untilFrom(minutes)) },
+            onDndToggle = { AppPrefs.setDndOn(it) },
+            onDndRange = { start, end -> AppPrefs.setDndRange(start, end) },
+            onTheme = { AppPrefs.setTheme(it) },
             onBack = { screen = Screen.Home }
         )
     }
