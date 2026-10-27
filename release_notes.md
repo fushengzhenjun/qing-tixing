@@ -48,6 +48,6 @@
 完全免费、开源、无广告、无账号、不联网、不收集任何数据；提醒数据只保存在本机，备份也只写在你自己的电脑上。反馈入口只有在你主动点击时才会打开邮件程序或浏览器，平时不联网。
 
 - 作者邮箱：894233371@qq.com
-- 隐私政策：https://fushengzhenjun.github.io/qing-tixing/
+- 隐私政策：https://fushengzhenjun.github.io/qing-tixing/privacy.html
 - 问题反馈：https://github.com/fushengzhenjun/qing-tixing/issues
 - 安装包暂未做代码签名，首次运行可能出现 SmartScreen 提示，点「更多信息 → 仍要运行」即可。

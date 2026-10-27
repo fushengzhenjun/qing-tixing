@@ -77,7 +77,7 @@ cd android
 - 桌面版数据：`%APPDATA%\轻提醒\`
 - 安卓版数据：应用私有目录 `filesDir/reminders.json`
 
-完整说明见 [隐私政策](https://fushengzhenjun.github.io/qing-tixing/)。
+完整说明见 [隐私政策](https://fushengzhenjun.github.io/qing-tixing/privacy.html)。
 
 ## 反馈
 
