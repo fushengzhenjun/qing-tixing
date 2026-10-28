@@ -118,5 +118,44 @@ console.log(`  已更新 refs/heads/${BRANCH}`);
 
 const remote = ghJson(["api", `/repos/${OWNER}/${REPO}/git/refs/heads/${BRANCH}`]).object.sha;
 console.log("\n远端 HEAD:", remote);
-console.log(remote === local ? "✔ 与本地完全一致" : "✘ 不一致，需要检查");
-process.exit(remote === local ? 0 : 1);
+
+if (remote === local) {
+  console.log("✔ 与本地完全一致");
+  process.exit(0);
+}
+
+/* SHA 对不上，但不是"内容"对不上——最常见的原因是 GitHub 重建提交对象时
+   把说明末尾的换行去掉了，于是同样的内容算出不同的 SHA。
+   这会让本地和远端分叉，下次 git push 直接被拒。所以这里不退出了事：
+   只要树一致，就按远端那份对象的字节重建一个本地提交，把分支指针挪过去。 */
+const remoteCommit = ghJson(["api", `/repos/${OWNER}/${REPO}/git/commits/${remote}`]);
+if (remoteCommit.tree.sha !== localTree) {
+  console.log("✘ 树不一致（内容真的不同），需要人工检查");
+  process.exit(1);
+}
+console.log("  树的 SHA 一致，只是提交对象不同，尝试把本地指针校正到远端");
+
+const crypto = require("crypto");
+const raw = gitBuf(["cat-file", "commit", local]).toString("utf8");
+const body = raw.slice(raw.indexOf("\n\n") + 2);
+const header = raw.slice(0, raw.indexOf("\n\n"));
+
+let fixed = false;
+for (const variant of [body.replace(/\n+$/, ""), body.replace(/\n+$/, "") + "\n", body]) {
+  const obj = header + "\n\n" + variant;
+  const sha = crypto.createHash("sha1")
+    .update(`commit ${Buffer.byteLength(obj, "utf8")}\0` + obj, "utf8")
+    .digest("hex");
+  if (sha !== remote) continue;
+  execFileSync("git", ["hash-object", "-t", "commit", "-w", "--stdin"], {
+    cwd: ROOT,
+    input: obj,
+    encoding: "utf8"
+  });
+  execFileSync("git", ["update-ref", `refs/heads/${BRANCH}`, remote], { cwd: ROOT });
+  fixed = true;
+  break;
+}
+
+console.log(fixed ? "✔ 已把本地分支对齐到远端，两边一致" : "✘ 没能复现远端对象，需要手工处理");
+process.exit(fixed ? 0 : 1);
