@@ -96,6 +96,35 @@ function buildTools() {
   };
 }
 
+/**
+ * 改版本号。
+ * kind: patch（修 bug）/ minor（加功能）/ major（不兼容的大改）。
+ * versionCode 一律 +1 —— 商店只认它，不递增就推不了更新；versionName 只是给人看的。
+ */
+function bumpVersion(kind) {
+  const file = path.join(ANDROID, "app", "build.gradle.kts");
+  let g = fs.readFileSync(file, "utf8");
+  const v = readVersion();
+  const parts = v.name.split(".").map((n) => parseInt(n, 10));
+  while (parts.length < 3) parts.push(0);
+
+  if (kind === "major") {
+    parts[0] += 1; parts[1] = 0; parts[2] = 0;
+  } else if (kind === "minor") {
+    parts[1] += 1; parts[2] = 0;
+  } else {
+    parts[2] += 1;
+  }
+  const name = parts.join(".");
+  const code = String(parseInt(v.code, 10) + 1);
+
+  g = g.replace(/versionCode\s*=\s*\d+/, "versionCode = " + code);
+  g = g.replace(/versionName\s*=\s*"[^"]+"/, 'versionName = "' + name + '"');
+  fs.writeFileSync(file, g, "utf8");
+  log(`版本号 ${v.name}(${v.code}) → ${name}(${code})`);
+  return { name: name, code: code };
+}
+
 function sha256(file) {
   const h = crypto.createHash("sha256");
   h.update(fs.readFileSync(file));
@@ -103,8 +132,23 @@ function sha256(file) {
 }
 
 function main() {
+  /* --bump / --bump=minor / --bump=major：先把版本号推进一格再打包。
+     不加参数就按当前版本打，重复打会覆盖同名 APK，所以下面会提醒。 */
+  const bumpArg = process.argv.slice(2).find((a) => a === "--bump" || a.startsWith("--bump="));
+  if (bumpArg) {
+    const kind = bumpArg.includes("=") ? bumpArg.split("=")[1] : "patch";
+    if (!["patch", "minor", "major"].includes(kind)) die("--bump 只认 patch / minor / major");
+    bumpVersion(kind);
+  }
+
   const v = readVersion();
   log(`版本 ${v.name}（versionCode ${v.code}）`);
+
+  const existing = path.join(REL, `QingLing-${v.name}.apk`);
+  if (fs.existsSync(existing) && !bumpArg) {
+    warn(`发布目录里已经有 QingLing-${v.name}.apk，这次会覆盖它。`);
+    warn("如果这是新的一轮改动，建议带上 --bump 让版本号往前走一格。");
+  }
 
   if (!fs.existsSync(path.join(ANDROID, "keystore.properties"))) {
     warn("没有 android/keystore.properties，打出来的包会用 debug 签名，不能上架。");
