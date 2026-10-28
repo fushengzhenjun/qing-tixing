@@ -34,7 +34,12 @@ data class SettingsSnapshot(
     /** 到点提醒页的背景图，和主界面分开设 */
     val alarmBgUri: String = "",
     /** 工作日是否跟随法定节假日 */
-    val holidayAware: Boolean = true
+    val holidayAware: Boolean = true,
+    /**
+     * 到点是否把提醒页整个弹到最上层（对应电脑版的「弹窗盖在最上层」）。
+     * 关掉之后只走通知，不亮屏、不抢前台——开会、开车时不想被整页盖住的人会用到。
+     */
+    val fullScreenAlarm: Boolean = true
 ) {
 
     fun pausedNow(now: Long = System.currentTimeMillis()): Boolean =
@@ -95,6 +100,7 @@ object Settings {
     private const val K_APP_BG = "appBgUri"
     private const val K_ALARM_BG = "alarmBgUri"
     private const val K_HOLIDAY = "holidayAware"
+    private const val K_FULLSCREEN = "fullScreenAlarm"
 
     private var sp: SharedPreferences? = null
 
@@ -117,7 +123,8 @@ object Settings {
             theme = runCatching { ThemeMode.valueOf(themeName) }.getOrDefault(ThemeMode.SYSTEM),
             appBgUri = p.getString(K_APP_BG, "") ?: "",
             alarmBgUri = p.getString(K_ALARM_BG, "") ?: "",
-            holidayAware = p.getBoolean(K_HOLIDAY, true)
+            holidayAware = p.getBoolean(K_HOLIDAY, true),
+            fullScreenAlarm = p.getBoolean(K_FULLSCREEN, true)
         )
         Holiday.aware = _flow.value.holidayAware
     }
@@ -142,6 +149,12 @@ object Settings {
         val s = _flow.value.copy(dndStart = start, dndEnd = end)
         _flow.value = s
         sp?.edit()?.putInt(K_DND_START, start)?.putInt(K_DND_END, end)?.apply()
+    }
+
+    fun setFullScreenAlarm(on: Boolean) {
+        val s = _flow.value.copy(fullScreenAlarm = on)
+        _flow.value = s
+        sp?.edit()?.putBoolean(K_FULLSCREEN, on)?.apply()
     }
 
     fun setHolidayAware(on: Boolean) {

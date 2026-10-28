@@ -14,6 +14,7 @@ import com.qingtx.qingtiixing.R
 import com.qingtx.qingtiixing.data.Fmt
 import com.qingtx.qingtiixing.data.Reminder
 import com.qingtx.qingtiixing.data.Ring
+import com.qingtx.qingtiixing.data.Settings
 
 /**
  * 通知。
@@ -124,7 +125,11 @@ object Notifier {
             .addAction(0, "5 分钟后", snoozeAction(5))
             .addAction(0, "10 分钟后", snoozeAction(10))
 
-        if (!silent) {
+        /* 全屏提醒页：锁屏或别的 app 开着时把提醒整个抬到前台，
+           对应电脑版那个「独立小窗盖在最上层」。
+           夜间免打扰时不拉全屏——半夜亮屏比响一声更烦人；
+           用户在设置里关掉「到点亮屏弹出」时也不拉，只留通知。 */
+        if (!silent && Settings.current.fullScreenAlarm) {
             builder.setFullScreenIntent(fullScreen, true)
         }
         val n = builder.build()

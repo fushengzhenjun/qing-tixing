@@ -207,6 +207,7 @@ private fun AppRoot() {
             onDndRange = { start, end -> AppPrefs.setDndRange(start, end) },
             onTheme = { AppPrefs.setTheme(it) },
             onHolidayAware = { AppPrefs.setHolidayAware(it) },
+            onFullScreenAlarm = { AppPrefs.setFullScreenAlarm(it) },
             onPickAppBg = { AppPrefs.setAppBg(it) },
             onClearAppBg = { AppPrefs.setAppBg("") },
             onPickAlarmBg = { AppPrefs.setAlarmBg(it) },
@@ -266,6 +267,28 @@ private fun AppRoot() {
             onTestFire = {
                 Scheduler(ctx).scheduleTest(10)
                 "10 秒后会响一条测试提醒，可以切到桌面或锁屏看看效果"
+            },
+            onBackupNow = {
+                if (list.isEmpty()) {
+                    "还没有提醒，没什么可备份的"
+                } else {
+                    Transfer.snapshotNow(ctx, list)
+                    backupFiles = Transfer.backups(ctx)
+                    backupFiles.firstOrNull()?.let { "已备份 ${list.size} 条 · ${Transfer.backupTime(it)}" }
+                        ?: "备份没写成功，检查一下存储空间"
+                }
+            },
+            onOpenNotifSettings = { openAppNotificationSettings(ctx) },
+            onCopyDiagnostics = {
+                val text = "轻铃 v$versionName\n" +
+                    "Android ${Build.VERSION.RELEASE}（SDK ${Build.VERSION.SDK_INT}）\n" +
+                    "${Build.MANUFACTURER} ${Build.MODEL}\n" +
+                    "提醒 ${list.size} 条 · 备份 ${backupFiles.size} 份"
+                val cm = ctx.getSystemService(android.content.ClipboardManager::class.java)
+                val ok = cm != null && runCatching {
+                    cm.setPrimaryClip(android.content.ClipData.newPlainText("轻铃反馈信息", text))
+                }.isSuccess
+                if (ok) "已复制，可以粘到反馈里" else "复制失败，这台设备不让写剪贴板"
             },
             onBack = { screen = Screen.Home }
         )
