@@ -137,7 +137,18 @@ private fun AppRoot() {
                     Scheduler(ctx).schedule(updated)
                     refresh()
                 },
-                onSetDone = { id, key, done -> Store.setDone(id, key, done) },
+                onSetDone = { id, key, done ->
+                    Store.setDone(id, key, done)
+                    /* 单次提醒勾了完成就没有"下一次"了，直接停掉并取消闹钟；
+                       重复提醒不停用，交给 AlarmReceiver 判断当天不再响 */
+                    if (done) {
+                        val r = Store.get(id)
+                        if (r != null && r.type == com.qingtx.qingtiixing.data.ReminderType.ONCE) {
+                            Store.upsert(r.copy(enabled = false))
+                            Scheduler(ctx).cancel(r.id)
+                        }
+                    }
+                },
                 onSettings = { screen = Screen.Settings },
                 onWarnClick = { screen = Screen.Settings }
             )

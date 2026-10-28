@@ -75,6 +75,24 @@ class AlarmReceiver : BroadcastReceiver() {
             return
         }
 
+        /* 今天已经勾过「完成」：当天不再响。
+           对应电脑版的 mutedDates——它也是勾完成时顺手把当天静音，
+           而不是另给一个「这天别提醒我」的开关。
+           规则照常往前走，否则循环提醒会卡在同一个时间点上。 */
+        val todayKey = com.qingtx.qingtiixing.data.DayEvents.key(System.currentTimeMillis())
+        if (!isSnooze && r.doneDates.contains(todayKey)) {
+            val now = System.currentTimeMillis()
+            if (r.type == ReminderType.ONCE) {
+                Store.upsert(r.copy(enabled = false, lastFiredAt = now))
+                Scheduler(context).cancel(r.id)
+            } else {
+                val updated = r.copy(lastFiredAt = now)
+                Store.upsert(updated)
+                Scheduler(context).schedule(updated)
+            }
+            return
+        }
+
         /* 夜间免打扰：照常弹通知、照常记录，只是不出声不振动 */
         Notifier.show(context, r, silent = Settings.current.inDnd())
 
