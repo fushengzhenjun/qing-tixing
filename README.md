@@ -89,6 +89,19 @@ node tools/android_release.js
 ```
 
 会编译 release 包、校验签名、复制到 `发布\安卓\` 并算 SHA256，也会重生成商店图标。
+
+**跑单元测试**
+
+```bash
+# 先拷到纯英文路径：工程目录带中文时，Gradle 的测试进程会把路径转成乱码，
+# 表现是 ClassNotFoundException（类明明编译出来了），改代码没用，只能换路径。
+mkdir -p /d/qtx-test && tar -cf - -C android --exclude=build --exclude=.gradle . | tar -xf - -C /d/qtx-test
+cd /d/qtx-test && JAVA_HOME=<你的 JDK17> ./gradlew :app:testDebugUnitTest
+```
+
+测的是 `NextFire`（下一次什么时候响），八种重复规则的边界都在里面：
+每月 31 号跳过没这一天的月份、2 月 29 日平年跳过、每隔 N 天从锚点算、
+循环窗口的起点/终点/跨天。
 只想要安装包的话，`cd android && ./gradlew :app:assembleRelease` 也一样。
 
 签名信息放在 `android/keystore.properties`（已在 `.gitignore` 中排除，自行生成），

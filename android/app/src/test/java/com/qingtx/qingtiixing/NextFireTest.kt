@@ -124,4 +124,111 @@ class NextFireTest {
         val r = Reminder(type = ReminderType.DAILY, hour = 9, minute = 0)
         assertEquals("2026-11-1 9:0", parts(NextFire.next(r, at(2026, 10, 31, 10, 0))!!))
     }
+
+    /* ---------- 以下补的：每月 / 每年 / 每隔 N 天 / 分钟循环 ---------- */
+    /* 这四种是「下次什么时候响」里最容易算错的部分，之前一条用例都没有。 */
+
+    @Test
+    fun monthly_31st_skipsMonthWithoutThatDay() {
+        /* 1 月 31 日的已经响过，2 月没有 31 号 → 跳到 3 月 31 日 */
+        val r = Reminder(type = ReminderType.MONTHLY, dayOfMonth = 31, hour = 9, minute = 0)
+        assertEquals("2026-3-31 9:0", parts(NextFire.next(r, at(2026, 1, 31, 10, 0))!!))
+    }
+
+    @Test
+    fun monthly_30th_skipsFebruary() {
+        val r = Reminder(type = ReminderType.MONTHLY, dayOfMonth = 30, hour = 8, minute = 0)
+        assertEquals("2026-3-30 8:0", parts(NextFire.next(r, at(2026, 2, 28, 9, 0))!!))
+    }
+
+    @Test
+    fun monthly_sameDayBeforeTime_firesToday() {
+        val r = Reminder(type = ReminderType.MONTHLY, dayOfMonth = 15, hour = 9, minute = 0)
+        assertEquals("2026-11-15 9:0", parts(NextFire.next(r, at(2026, 11, 15, 7, 0))!!))
+    }
+
+    @Test
+    fun yearly_feb29_skipsNonLeapYear() {
+        /* 2026、2027 都不是闰年，下一次 2 月 29 日要等 2028 */
+        val r = Reminder(type = ReminderType.YEARLY, monthOfYear = 2, dayOfMonth = 29, hour = 10, minute = 0)
+        assertEquals("2028-2-29 10:0", parts(NextFire.next(r, at(2026, 3, 1, 0, 0))!!))
+    }
+
+    @Test
+    fun yearly_sameYearStillAhead_keepsThisYear() {
+        val r = Reminder(type = ReminderType.YEARLY, monthOfYear = 12, dayOfMonth = 24, hour = 20, minute = 0)
+        assertEquals("2026-12-24 20:0", parts(NextFire.next(r, at(2026, 10, 26, 9, 0))!!))
+    }
+
+    @Test
+    fun ndays_countsFromAnchor() {
+        /* 锚点 10-26，每 3 天；10-26 的 8:00 已过 → 下一次 10-29 */
+        val anchor = at(2026, 10, 26, 8, 0)
+        val r = Reminder(type = ReminderType.NDAYS, everyDays = 3, anchorMillis = anchor, hour = 8, minute = 0)
+        assertEquals("2026-10-29 8:0", parts(NextFire.next(r, at(2026, 10, 26, 10, 0))!!))
+    }
+
+    @Test
+    fun ndays_firstDayStillAhead_keepsToday() {
+        val anchor = at(2026, 10, 26, 8, 0)
+        val r = Reminder(type = ReminderType.NDAYS, everyDays = 3, anchorMillis = anchor, hour = 8, minute = 0)
+        assertEquals("2026-10-26 8:0", parts(NextFire.next(r, at(2026, 10, 26, 6, 0))!!))
+    }
+
+    @Test
+    fun loop_midWindow_stepsOneSlot() {
+        val r = Reminder(
+            type = ReminderType.LOOP, hour = 9, minute = 0,
+            loopStartH = 9, loopStartM = 0, loopEndH = 18, loopEndM = 0, everyMin = 60
+        )
+        assertEquals("2026-10-26 11:0", parts(NextFire.next(r, at(2026, 10, 26, 10, 30))!!))
+    }
+
+    @Test
+    fun loop_beforeWindow_waitsForOpening() {
+        val r = Reminder(
+            type = ReminderType.LOOP, loopStartH = 9, loopStartM = 0,
+            loopEndH = 18, loopEndM = 0, everyMin = 60
+        )
+        assertEquals("2026-10-26 9:0", parts(NextFire.next(r, at(2026, 10, 26, 7, 15))!!))
+    }
+
+    @Test
+    fun loop_afterWindow_rollsToTomorrowMorning() {
+        val r = Reminder(
+            type = ReminderType.LOOP, loopStartH = 9, loopStartM = 0,
+            loopEndH = 18, loopEndM = 0, everyMin = 60
+        )
+        assertEquals("2026-10-27 9:0", parts(NextFire.next(r, at(2026, 10, 26, 18, 30))!!))
+    }
+
+    @Test
+    fun loop_endBoundary_isInclusive() {
+        /* 18:00 是窗口内最后一响：17:30 起算，下一次正好是 18:00 */
+        val r = Reminder(
+            type = ReminderType.LOOP, loopStartH = 9, loopStartM = 0,
+            loopEndH = 18, loopEndM = 0, everyMin = 30
+        )
+        assertEquals("2026-10-26 18:0", parts(NextFire.next(r, at(2026, 10, 26, 17, 30))!!))
+    }
+
+    @Test
+    fun loop_exactlyAtSlot_advancesOneStep() {
+        /* 正好站在 10:00 这个点上，不能再报 10:00，必须往后一格 */
+        val r = Reminder(
+            type = ReminderType.LOOP, loopStartH = 9, loopStartM = 0,
+            loopEndH = 18, loopEndM = 0, everyMin = 60
+        )
+        assertEquals("2026-10-26 11:0", parts(NextFire.next(r, at(2026, 10, 26, 10, 0))!!))
+    }
+
+    @Test
+    fun loop_invalidWindow_returnsNull() {
+        /* 结束早于开始，属于填错了，宁可不动也不乱响 */
+        val r = Reminder(
+            type = ReminderType.LOOP, loopStartH = 18, loopStartM = 0,
+            loopEndH = 9, loopEndM = 0, everyMin = 30
+        )
+        assertNull(NextFire.next(r, at(2026, 10, 26, 10, 0)))
+    }
 }
