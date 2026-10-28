@@ -752,10 +752,12 @@ if (!gotLock) {
   app.on("second-instance", () => showWindow());
 
   app.whenReady().then(() => {
-    /* Windows 系统通知需要 AppUserModelID */
-    if (process.platform === "win32") {
-      app.setAppUserModelId("com.qingtx.qingtiixing");
-    }
+    /* 这里刻意不调用 app.setAppUserModelId()。
+       踩过的坑：设了 AUMID 之后，Windows 会去注册表里找同 ID 的快捷方式来解析任务栏
+       图标；绿色版没有快捷方式，安装版的快捷方式一旦失效，解析失败就退回系统那张
+       空白占位图（v1.6.0 在绿色版上实测：任务栏是个白底蓝块的默认图标）。
+       不设的话任务栏直接用 exe 自带的图标，一切正常；安装版从快捷方式启动时，
+       系统会自动把快捷方式里写的 AUMID 套到进程上，通知归类照样对。 */
     repairAutoLaunch();
     createTray();
     createWindow();
