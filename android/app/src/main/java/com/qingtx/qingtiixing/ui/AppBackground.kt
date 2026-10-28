@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
@@ -71,8 +72,21 @@ fun BackgroundLayer(
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
             )
-            /* 没设背景时不盖遮罩，否则整个界面会被冲淡一层 */
-            Box(Modifier.fillMaxSize().background(scrim))
+            /* 没设背景时不盖遮罩，否则整个界面会被冲淡一层。
+               用渐变而不是一层平色：顶部有大时钟和日期，它们没有卡片托着，
+               直接压在图上最容易糊；下面的日历和列表本身是不透明的卡片，
+               不需要那么重，留一点透出来才看得出设了背景。 */
+            Box(
+                Modifier.fillMaxSize().background(
+                    Brush.verticalGradient(
+                        listOf(
+                            scrim.copy(alpha = (scrim.alpha + 0.20f).coerceAtMost(1f)),
+                            scrim,
+                            scrim.copy(alpha = (scrim.alpha - 0.14f).coerceAtLeast(0.2f))
+                        )
+                    )
+                )
+            )
         }
         content()
     }

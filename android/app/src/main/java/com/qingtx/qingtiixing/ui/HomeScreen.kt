@@ -127,7 +127,10 @@ fun HomeScreen(
 
     BackgroundLayer(
         uri = appBgUri.ifBlank { null },
-        scrim = if (isDark) Color.Black.copy(alpha = 0.5f) else Color.White.copy(alpha = 0.55f)
+        /* 遮罩要够重：大时钟和日期没有卡片托着，直接压在图上，
+           0.55 的白在花一点的图里根本读不清（实测过截图）。
+           加深到 0.72 之后背景还看得出来，但文字稳了。 */
+        scrim = if (isDark) Color.Black.copy(alpha = 0.66f) else Color.White.copy(alpha = 0.72f)
     ) {
     Scaffold(
         containerColor = if (appBgUri.isBlank()) MaterialTheme.colorScheme.background else Color.Transparent,
