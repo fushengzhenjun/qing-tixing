@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -234,9 +235,15 @@ fun SettingsScreen(
         }
     }
 
+    /* 缺项数量：为 0 时首屏不出现任何权限提示 */
+    val missing = remember(perms) { perms.count { !it.ok } }
+    var permOpen by remember(missing) { mutableStateOf(missing > 0) }
+
     var backupOpen by remember { mutableStateOf(false) }
     var transferOpen by remember { mutableStateOf(false) }
     var bgOpen by remember { mutableStateOf(false) }
+
+    var tab by remember { mutableIntStateOf(0) }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -258,263 +265,355 @@ fun SettingsScreen(
         Column(
             Modifier
                 .padding(pad)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp)
+                .fillMaxSize()
         ) {
 
-            /* ---------- 权限 ---------- */
-            Spacer(Modifier.height(4.dp))
-            PermissionBanner(items = perms)
-
-            /* ---------- 提醒 ---------- */
-            SectionLabel("提醒", top = 22.dp)
-
-            GroupCard {
-                SwitchRow(
-                    title = "全部暂停",
-                    desc = pauseDesc,
-                    checked = prefs.pauseAll,
-                    active = prefs.pauseAll,
-                    onChecked = onPauseToggle
-                )
-
-                if (prefs.pauseAll) {
-                    Divider()
-                    Column(Modifier.padding(horizontal = 16.dp, vertical = 13.dp)) {
-                        Text(
-                            "暂停到",
-                            fontSize = 12.5.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(Modifier.height(9.dp))
-                        Segmented(
-                            options = listOf("1 小时", "4 小时", "明早 8 点", "手动"),
-                            selected = pauseIdx,
-                            onSelect = { onPauseDuration(when (it) { 0 -> 60; 1 -> 240; 2 -> -1; else -> 0 }) }
-                        )
-                    }
+            /* 权限只在缺东西时冒出来；四项都正常时这一行根本不存在，首屏干净。
+               和电脑版一致：正常状态不该占用屏幕。 */
+            /* 在「关于」页时不再重复：那张权限卡片就摆在下面 */
+            if (missing > 0 && tab != 3) {
+                Row(
+                    Modifier
+                        .padding(horizontal = 16.dp, vertical = 2.dp)
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(11.dp))
+                        .background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.55f))
+                        .clickable { tab = 3; permOpen = true }
+                        .padding(horizontal = 13.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "$missing 项权限没开，到点可能不响",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Text(
+                        "去处理",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.error
+                    )
                 }
+            }
 
-                Divider()
-
-                SwitchRow(
-                    title = "夜间免打扰",
-                    desc = if (prefs.dndOn) "时段内静音，照常记录" else "夜里到点不吵你",
-                    checked = prefs.dndOn,
-                    onChecked = onDndToggle
+            /* 和电脑版同一套信息架构：四个页签，一页三四行。
+               之前是一条长滚动，设置项越加越多，划到底要很久，也看不出重点。 */
+            Box(Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
+                Segmented(
+                    options = listOf("常规", "提醒", "数据", "关于"),
+                    selected = tab,
+                    onSelect = { tab = it }
                 )
+            }
 
-                if (prefs.dndOn) {
-                    Divider()
-                    Column(Modifier.padding(horizontal = 16.dp, vertical = 13.dp)) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            TimePill(prefs.hhmm(prefs.dndStart)) {
-                                pickTime(ctx, prefs.dndStart) { onDndRange(it, prefs.dndEnd) }
+            when (tab) {
+                /* ---------- 常规 ---------- */
+                0 -> Column(
+                    Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 16.dp)
+                ) {
+                    Spacer(Modifier.height(2.dp))
+
+                    GroupCard {
+                        SwitchRow(
+                            title = "全部暂停",
+                            desc = pauseDesc,
+                            checked = prefs.pauseAll,
+                            active = prefs.pauseAll,
+                            onChecked = onPauseToggle
+                        )
+
+                        if (prefs.pauseAll) {
+                            Divider()
+                            Column(Modifier.padding(horizontal = 16.dp, vertical = 13.dp)) {
+                                Text(
+                                    "暂停到",
+                                    fontSize = 12.5.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Spacer(Modifier.height(9.dp))
+                                Segmented(
+                                    options = listOf("1 小时", "4 小时", "明早 8 点", "手动"),
+                                    selected = pauseIdx,
+                                    onSelect = {
+                                        onPauseDuration(
+                                            when (it) { 0 -> 60; 1 -> 240; 2 -> -1; else -> 0 }
+                                        )
+                                    }
+                                )
                             }
-                            Text("至", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            TimePill(prefs.hhmm(prefs.dndEnd)) {
-                                pickTime(ctx, prefs.dndEnd) { onDndRange(prefs.dndStart, it) }
+                        }
+                    }
+
+                    Spacer(Modifier.height(12.dp))
+
+                    GroupCard {
+                        Column(Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
+                            Text("主题", fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                            Spacer(Modifier.height(10.dp))
+                            val modes = ThemeMode.values()
+                            Segmented(
+                                options = modes.map { it.label },
+                                selected = modes.indexOf(prefs.theme),
+                                onSelect = { onTheme(modes[it]) }
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.height(12.dp))
+
+                    GroupCard {
+                        val bgCount = listOf(prefs.appBgUri, prefs.alarmBgUri).count { it.isNotBlank() }
+                        ActionRow(
+                            title = "背景图",
+                            desc = when (bgCount) {
+                                0 -> "首页和提醒页各选一张"
+                                1 -> "已设置 1 张"
+                                else -> "已设置 2 张"
+                            },
+                            action = if (bgOpen) "收起" else "设置",
+                            active = bgOpen,
+                            onAction = { bgOpen = !bgOpen }
+                        )
+
+                        if (bgOpen) {
+                            Divider()
+                            BgRow(
+                                title = "首页背景",
+                                has = prefs.appBgUri.isNotBlank(),
+                                onPick = { bgTarget = 1; picker.launch(arrayOf("image/*")) },
+                                onClear = { onClearAppBg(); msg = "已移除首页背景" }
+                            )
+                            Divider()
+                            BgRow(
+                                title = "提醒页背景",
+                                has = prefs.alarmBgUri.isNotBlank(),
+                                onPick = { bgTarget = 2; picker.launch(arrayOf("image/*")) },
+                                onClear = { onClearAlarmBg(); msg = "已移除提醒页背景" }
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.height(32.dp))
+                }
+
+                /* ---------- 提醒 ---------- */
+                1 -> Column(
+                    Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 16.dp)
+                ) {
+                    Spacer(Modifier.height(2.dp))
+
+                    GroupCard {
+                        SwitchRow(
+                            title = "到点亮屏弹出",
+                            desc = when {
+                                !prefs.fullScreenAlarm -> "只在通知栏提示"
+                                sdkInt >= 34 && !fullScreenAllowed -> "系统未允许，目前只能出通知"
+                                else -> "锁屏或别的应用开着也能盖上来"
+                            },
+                            checked = prefs.fullScreenAlarm,
+                            onChecked = onFullScreenAlarm
+                        )
+
+                        Divider()
+
+                        SwitchRow(
+                            title = "夜间免打扰",
+                            desc = if (prefs.dndOn) "时段内静音，照常记录" else "夜里到点不吵你",
+                            checked = prefs.dndOn,
+                            onChecked = onDndToggle
+                        )
+
+                        if (prefs.dndOn) {
+                            Divider()
+                            Column(Modifier.padding(horizontal = 16.dp, vertical = 13.dp)) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    TimePill(prefs.hhmm(prefs.dndStart)) {
+                                        pickTime(ctx, prefs.dndStart) { onDndRange(it, prefs.dndEnd) }
+                                    }
+                                    Text("至", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    TimePill(prefs.hhmm(prefs.dndEnd)) {
+                                        pickTime(ctx, prefs.dndEnd) { onDndRange(prefs.dndStart, it) }
+                                    }
+                                }
+                                Spacer(Modifier.height(8.dp))
+                                Text(
+                                    if (prefs.dndStart == prefs.dndEnd) "开始和结束一样，等于没开"
+                                    else "只是不出声不振动，提醒照常弹出",
+                                    fontSize = 12.sp,
+                                    lineHeight = 17.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                             }
                         }
-                        Spacer(Modifier.height(8.dp))
-                        Text(
-                            if (prefs.dndStart == prefs.dndEnd) "开始和结束一样，等于没开"
-                            else "只是不出声不振动，提醒照常弹出",
-                            fontSize = 12.sp,
-                            lineHeight = 17.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+
+                        Divider()
+
+                        SwitchRow(
+                            title = "工作日跟随节假日",
+                            desc = if (prefs.holidayAware) "放假不提醒，调休照常" else "只按周一到周五",
+                            checked = prefs.holidayAware,
+                            onChecked = onHolidayAware
                         )
                     }
-                }
 
-                Divider()
+                    Spacer(Modifier.height(12.dp))
 
-                SwitchRow(
-                    title = "到点亮屏弹出",
-                    desc = when {
-                        !prefs.fullScreenAlarm -> "只在通知栏提示"
-                        sdkInt >= 34 && !fullScreenAllowed -> "系统未允许，目前只能出通知"
-                        else -> "锁屏或别的应用开着也能盖上来"
-                    },
-                    checked = prefs.fullScreenAlarm,
-                    onChecked = onFullScreenAlarm
-                )
-
-                Divider()
-
-                SwitchRow(
-                    title = "工作日跟随节假日",
-                    desc = if (prefs.holidayAware) "放假不提醒，调休照常" else "只按周一到周五",
-                    checked = prefs.holidayAware,
-                    onChecked = onHolidayAware
-                )
-
-                Divider()
-
-                ActionRow(
-                    title = "试发一条提醒",
-                    desc = if (notifGranted) "10 秒后响，可以锁屏看效果" else "先开通知权限",
-                    action = "发送",
-                    enabled = notifGranted,
-                    onAction = { msg = onTestFire() }
-                )
-            }
-
-            /* ---------- 外观 ---------- */
-            SectionLabel("外观")
-
-            GroupCard {
-                Column(Modifier.padding(horizontal = 16.dp, vertical = 13.dp)) {
-                    Text("主题", fontSize = 15.sp, fontWeight = FontWeight.Medium)
-                    Spacer(Modifier.height(10.dp))
-                    val modes = ThemeMode.values()
-                    Segmented(
-                        options = modes.map { it.label },
-                        selected = modes.indexOf(prefs.theme),
-                        onSelect = { onTheme(modes[it]) }
-                    )
-                }
-
-                Divider()
-
-                val bgCount = listOf(prefs.appBgUri, prefs.alarmBgUri).count { it.isNotBlank() }
-                ActionRow(
-                    title = "背景图",
-                    desc = when (bgCount) {
-                        0 -> "首页和提醒页都可以各选一张"
-                        1 -> "已设置 1 张"
-                        else -> "已设置 2 张"
-                    },
-                    action = if (bgOpen) "收起" else "设置",
-                    active = bgOpen,
-                    onAction = { bgOpen = !bgOpen }
-                )
-
-                if (bgOpen) {
-                    Divider()
-                    BgRow(
-                        title = "首页背景",
-                        has = prefs.appBgUri.isNotBlank(),
-                        onPick = { bgTarget = 1; picker.launch(arrayOf("image/*")) },
-                        onClear = { onClearAppBg(); msg = "已移除首页背景" }
-                    )
-                    Divider()
-                    BgRow(
-                        title = "提醒页背景",
-                        has = prefs.alarmBgUri.isNotBlank(),
-                        onPick = { bgTarget = 2; picker.launch(arrayOf("image/*")) },
-                        onClear = { onClearAlarmBg(); msg = "已移除提醒页背景" }
-                    )
-                }
-            }
-
-            /* ---------- 数据 ---------- */
-            SectionLabel("数据")
-
-            GroupCard {
-                ActionRow(
-                    title = "备份",
-                    desc = if (backupCount == 0) "每天自动存一份，现在还没有"
-                    else "每天自动 · 共 $backupCount 份",
-                    action = if (backupOpen) "收起" else "展开",
-                    active = backupOpen,
-                    onAction = { backupOpen = !backupOpen }
-                )
-
-                if (backupOpen) {
-                    Divider()
-                    MiniActions(
-                        left = "立即备份" to { msg = onBackupNow() },
-                        right = "从备份恢复" to { msg = onRestoreLatest() },
-                        hint = if (backupCount == 0) "还没有备份"
-                        else "最近一份：$backupLatest"
-                    )
-                }
-
-                Divider()
-
-                ActionRow(
-                    title = "导入导出",
-                    desc = "JSON 可给电脑版用，.ics 给手机日历",
-                    action = if (transferOpen) "收起" else "展开",
-                    active = transferOpen,
-                    onAction = { transferOpen = !transferOpen }
-                )
-
-                if (transferOpen) {
-                    Divider()
-                    MiniActions(
-                        left = "导出 JSON" to {
-                            exportJson.launch(com.qingtx.qingtiixing.data.Transfer.jsonFileName())
-                        },
-                        right = "导入" to {
-                            importFile.launch(arrayOf("application/json", "text/plain", "*/*"))
-                        },
-                        hint = if (itemCount == 0) "现在没有提醒" else "当前 $itemCount 条，导入会整批覆盖"
-                    )
-                    Divider()
-                    ActionRow(
-                        title = "导出日历",
-                        desc = "存成 .ics，导进手机自带日历",
-                        action = "导出",
-                        enabled = itemCount > 0,
-                        onAction = {
-                            exportIcs.launch(com.qingtx.qingtiixing.data.Transfer.icsFileName())
-                        }
-                    )
-                }
-
-                Divider()
-
-                ActionRow(
-                    title = "清空全部提醒",
-                    desc = if (itemCount == 0) "本来就没有" else "清空前会自动留一份备份",
-                    action = "清空",
-                    danger = true,
-                    enabled = itemCount > 0,
-                    onAction = { confirmClear = true }
-                )
-            }
-
-            if (confirmClear) {
-                AlertDialog(
-                    onDismissRequest = { confirmClear = false },
-                    title = { Text("清空全部提醒？") },
-                    text = {
-                        Text(
-                            "会删掉这 $itemCount 条提醒，闹钟一并取消。\n" +
-                                "清空前会自动存一份备份，之后能在「备份」里找回。"
+                    GroupCard {
+                        ActionRow(
+                            title = "试发一条提醒",
+                            desc = if (notifGranted) "10 秒后响，可锁屏看效果" else "先开通知权限",
+                            action = "发送",
+                            enabled = notifGranted,
+                            onAction = { msg = onTestFire() }
                         )
-                    },
-                    confirmButton = {
-                        TextButton(onClick = {
-                            confirmClear = false
-                            msg = onClearAll()
-                        }) {
-                            Text("清空", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
-                        }
-                    },
-                    dismissButton = {
-                        TextButton(onClick = { confirmClear = false }) { Text("取消") }
                     }
-                )
+
+                    Spacer(Modifier.height(32.dp))
+                }
+
+                /* ---------- 数据 ---------- */
+                2 -> Column(
+                    Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 16.dp)
+                ) {
+                    Spacer(Modifier.height(2.dp))
+
+                    GroupCard {
+                        ActionRow(
+                            title = "备份",
+                            desc = if (backupCount == 0) "每天自动存一份，现在还没有"
+                            else "每天自动 · 共 $backupCount 份",
+                            action = if (backupOpen) "收起" else "展开",
+                            active = backupOpen,
+                            onAction = { backupOpen = !backupOpen }
+                        )
+
+                        if (backupOpen) {
+                            Divider()
+                            MiniActions(
+                                left = "立即备份" to { msg = onBackupNow() },
+                                right = "从备份恢复" to { msg = onRestoreLatest() },
+                                hint = if (backupCount == 0) "还没有备份"
+                                else "最近一份：$backupLatest"
+                            )
+                        }
+
+                        Divider()
+
+                        ActionRow(
+                            title = "导入导出",
+                            desc = "JSON 可给电脑版用，.ics 给手机日历",
+                            action = if (transferOpen) "收起" else "展开",
+                            active = transferOpen,
+                            onAction = { transferOpen = !transferOpen }
+                        )
+
+                        if (transferOpen) {
+                            Divider()
+                            MiniActions(
+                                left = "导出 JSON" to {
+                                    exportJson.launch(com.qingtx.qingtiixing.data.Transfer.jsonFileName())
+                                },
+                                right = "导入" to {
+                                    importFile.launch(arrayOf("application/json", "text/plain", "*/*"))
+                                },
+                                hint = if (itemCount == 0) "现在没有提醒" else "当前 $itemCount 条，导入会整批覆盖"
+                            )
+                            Divider()
+                            ActionRow(
+                                title = "导出日历",
+                                desc = "存成 .ics，导进手机自带日历",
+                                action = "导出",
+                                enabled = itemCount > 0,
+                                onAction = {
+                                    exportIcs.launch(com.qingtx.qingtiixing.data.Transfer.icsFileName())
+                                }
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.height(12.dp))
+
+                    GroupCard {
+                        ActionRow(
+                            title = "清空全部提醒",
+                            desc = if (itemCount == 0) "本来就没有" else "清空前会自动留一份备份",
+                            action = "清空",
+                            danger = true,
+                            enabled = itemCount > 0,
+                            onAction = { confirmClear = true }
+                        )
+                    }
+
+                    Spacer(Modifier.height(32.dp))
+                }
+
+                /* ---------- 关于 ---------- */
+                else -> Column(
+                    Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 16.dp)
+                ) {
+                    Spacer(Modifier.height(2.dp))
+
+                    SectionLabel("权限与自检", top = 2.dp)
+                    PermissionBanner(
+                        items = perms,
+                        open = permOpen,
+                        onToggle = { permOpen = !permOpen }
+                    )
+
+                    Spacer(Modifier.height(14.dp))
+
+                    AboutCard(
+                        versionName = versionName,
+                        androidLabel = androidLabel,
+                        onCopyDiagnostics = { msg = onCopyDiagnostics() },
+                        onOpenNotifSettings = onOpenNotifSettings
+                    )
+
+                    Spacer(Modifier.height(32.dp))
+                }
             }
-
-            /* ---------- 关于 ---------- */
-            SectionLabel("关于")
-
-            AboutCard(
-                versionName = versionName,
-                androidLabel = androidLabel,
-                onCopyDiagnostics = { msg = onCopyDiagnostics() },
-                onOpenNotifSettings = onOpenNotifSettings
-            )
-
-            Spacer(Modifier.height(40.dp))
         }
+    }
+
+    if (confirmClear) {
+        AlertDialog(
+            onDismissRequest = { confirmClear = false },
+            title = { Text("清空全部提醒？") },
+            text = {
+                Text(
+                    "会删掉这 $itemCount 条提醒，闹钟一并取消。\n" +
+                        "清空前会自动存一份备份，之后能在「备份」里找回。"
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmClear = false
+                    msg = onClearAll()
+                }) {
+                    Text("清空", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmClear = false }) { Text("取消") }
+            }
+        )
     }
 }
 
@@ -536,10 +635,12 @@ private data class PermItem(
  * 用户从系统设置里关掉某一项之后，回来还能自己确认。
  */
 @Composable
-private fun PermissionBanner(items: List<PermItem>) {
+private fun PermissionBanner(
+    items: List<PermItem>,
+    open: Boolean,
+    onToggle: () -> Unit
+) {
     val allOk = items.all { it.ok }
-    var open by remember(allOk) { mutableStateOf(!allOk) }
-
     val missing = items.count { !it.ok }
     val container = if (allOk) MaterialTheme.colorScheme.surface
     else MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.55f)
@@ -557,7 +658,7 @@ private fun PermissionBanner(items: List<PermItem>) {
             Row(
                 Modifier
                     .fillMaxWidth()
-                    .clickable { open = !open }
+                    .clickable { onToggle() }
                     .padding(horizontal = 14.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {

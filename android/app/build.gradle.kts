@@ -22,8 +22,8 @@ android {
         applicationId = "com.qingtx.qingtiixing"
         minSdk = 26            /* Android 8.0：通知渠道从那版开始，覆盖面已经足够 */
         targetSdk = 35
-        versionCode = 2
-        versionName = "1.0.1"
+        versionCode = 3
+        versionName = "1.0.2"
         resourceConfigurations += listOf("zh", "en")
     }
 
