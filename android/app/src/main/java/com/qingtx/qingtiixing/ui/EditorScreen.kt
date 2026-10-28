@@ -31,6 +31,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -77,7 +78,18 @@ fun EditorScreen(
     var days by remember { mutableStateOf(existing?.daysOfWeek ?: emptyList()) }
     var category by remember { mutableStateOf(existing?.category ?: Category.OTHER) }
     var ring by remember { mutableStateOf(existing?.ring ?: Ring.CHIME) }
+    var vibrate by remember { mutableStateOf(existing?.vibrate ?: true) }
     var error by remember { mutableStateOf<String?>(null) }
+
+    /* 每月 / 每年 / 每隔N天 / 循环 各自的参数 */
+    var dayOfMonth by remember { mutableIntStateOf(existing?.dayOfMonth ?: 1) }
+    var monthOfYear by remember { mutableIntStateOf(existing?.monthOfYear ?: 1) }
+    var everyDays by remember { mutableIntStateOf(existing?.everyDays ?: 2) }
+    var loopStartH by remember { mutableIntStateOf(existing?.loopStartH ?: 9) }
+    var loopStartM by remember { mutableIntStateOf(existing?.loopStartM ?: 0) }
+    var loopEndH by remember { mutableIntStateOf(existing?.loopEndH ?: 18) }
+    var loopEndM by remember { mutableIntStateOf(existing?.loopEndM ?: 0) }
+    var everyMin by remember { mutableIntStateOf(existing?.everyMin ?: 45) }
 
     fun commit() {
         val target = (existing ?: Reminder()).copy(
@@ -87,8 +99,19 @@ fun EditorScreen(
             minute = minute,
             atMillis = if (type == ReminderType.ONCE) atMillis else 0L,
             daysOfWeek = if (type == ReminderType.WEEKLY) days.sorted() else emptyList(),
+            dayOfMonth = dayOfMonth,
+            monthOfYear = monthOfYear,
+            everyDays = everyDays,
+            anchorMillis = existing?.anchorMillis?.takeIf { it > 0 }
+                ?: System.currentTimeMillis(),
+            loopStartH = loopStartH,
+            loopStartM = loopStartM,
+            loopEndH = loopEndH,
+            loopEndM = loopEndM,
+            everyMin = everyMin,
             category = category,
             ring = ring,
+            vibrate = vibrate,
             enabled = true
         )
         when {
@@ -96,6 +119,8 @@ fun EditorScreen(
                 error = "这个时间已经过去了，换个时间"
             type == ReminderType.WEEKLY && days.isEmpty() ->
                 error = "每周提醒至少要选一天"
+            type == ReminderType.LOOP && (loopEndH * 60 + loopEndM) <= (loopStartH * 60 + loopStartM) ->
+                error = "结束时间要晚于开始时间"
             else -> {
                 error = null
                 onSave(target)
@@ -143,13 +168,23 @@ fun EditorScreen(
 
             SectionLabel("类型")
             Row(
-                Modifier.fillMaxWidth().padding(bottom = 2.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 TypeChip("单次", type == ReminderType.ONCE) { type = ReminderType.ONCE }
                 TypeChip("每天", type == ReminderType.DAILY) { type = ReminderType.DAILY }
                 TypeChip("工作日", type == ReminderType.WEEKDAY) { type = ReminderType.WEEKDAY }
                 TypeChip("每周", type == ReminderType.WEEKLY) { type = ReminderType.WEEKLY }
+            }
+            Spacer(Modifier.height(6.dp))
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                TypeChip("每月", type == ReminderType.MONTHLY) { type = ReminderType.MONTHLY }
+                TypeChip("每年", type == ReminderType.YEARLY) { type = ReminderType.YEARLY }
+                TypeChip("每隔N天", type == ReminderType.NDAYS) { type = ReminderType.NDAYS }
+                TypeChip("循环", type == ReminderType.LOOP) { type = ReminderType.LOOP }
             }
 
             SectionLabel("时间")
@@ -216,6 +251,42 @@ fun EditorScreen(
                     }
                     Spacer(Modifier.weight(1f))
                 }
+            } else if (type == ReminderType.LOOP) {
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    BigButton(
+                        label = "开始 " + Fmt.hm(loopStartH, loopStartM),
+                        onClick = {
+                            pickTime(ctx, loopStartH, loopStartM) { h, m ->
+                                loopStartH = h; loopStartM = m
+                            }
+                        },
+                        modifier = Modifier.weight(1f)
+                    )
+                    BigButton(
+                        label = "结束 " + Fmt.hm(loopEndH, loopEndM),
+                        onClick = {
+                            pickTime(ctx, loopEndH, loopEndM) { h, m ->
+                                loopEndH = h; loopEndM = m
+                            }
+                        },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    "每多久提醒一次",
+                    fontSize = 12.5.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(6.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    SmallChip("15 分钟") { everyMin = 15 }
+                    SmallChip("30 分钟") { everyMin = 30 }
+                    SmallChip("45 分钟") { everyMin = 45 }
+                    SmallChip("60 分钟") { everyMin = 60 }
+                }
+                Spacer(Modifier.height(8.dp))
+                NumberStepper(everyMin, 1, 720, "分钟") { everyMin = it }
             } else {
                 BigButton(
                     label = Fmt.hm(hour, minute),
@@ -254,6 +325,32 @@ fun EditorScreen(
                 }
             }
 
+            when (type) {
+                ReminderType.MONTHLY -> {
+                    SectionLabel("每月几号")
+                    Text(
+                        "没有这一天的月份会自动跳过（比如 2 月没有 31 号）",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(bottom = 6.dp)
+                    )
+                    NumberStepper(dayOfMonth, 1, 31, "号") { dayOfMonth = it }
+                }
+                ReminderType.YEARLY -> {
+                    SectionLabel("每年哪一天")
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        NumberStepper(monthOfYear, 1, 12, "月") { monthOfYear = it }
+                        Spacer(Modifier.width(16.dp))
+                        NumberStepper(dayOfMonth, 1, 31, "日") { dayOfMonth = it }
+                    }
+                }
+                ReminderType.NDAYS -> {
+                    SectionLabel("每隔几天")
+                    NumberStepper(everyDays, 1, 365, "天") { everyDays = it }
+                }
+                else -> {}
+            }
+
             SectionLabel("分类")
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Category.entries.take(3).forEach { c ->
@@ -271,6 +368,17 @@ fun EditorScreen(
                 Ring.entries.forEach { rg ->
                     TypeChip(rg.label, ring == rg) { ring = rg }
                 }
+            }
+
+            Spacer(Modifier.height(12.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    "到点时同时振动",
+                    fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.weight(1f))
+                Switch(checked = vibrate, onCheckedChange = { vibrate = it })
             }
 
             if (error != null) {
@@ -304,6 +412,44 @@ private fun SectionLabel(text: String) {
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.padding(top = 20.dp, bottom = 8.dp)
     )
+}
+
+/** 「每隔 N 天」「每月几号」这类数字，用加减调比弹输入框省事 */
+@Composable
+private fun NumberStepper(value: Int, min: Int, max: Int, unit: String, onChange: (Int) -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        StepBtn("-", value > min) { onChange((value - 1).coerceAtLeast(min)) }
+        Text(
+            "$value $unit",
+            fontSize = 17.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(horizontal = 18.dp)
+        )
+        StepBtn("+", value < max) { onChange((value + 1).coerceAtMost(max)) }
+    }
+}
+
+@Composable
+private fun StepBtn(label: String, enabled: Boolean, onClick: () -> Unit) {
+    Box(
+        Modifier
+            .size(38.dp)
+            .clip(CircleShape)
+            .background(
+                if (enabled) MaterialTheme.colorScheme.surfaceVariant
+                else MaterialTheme.colorScheme.surface
+            )
+            .clickable(enabled = enabled, onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            label,
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Medium,
+            color = if (enabled) MaterialTheme.colorScheme.onSurface
+            else MaterialTheme.colorScheme.outline
+        )
+    }
 }
 
 @Composable

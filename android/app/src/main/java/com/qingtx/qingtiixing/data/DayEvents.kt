@@ -51,6 +51,22 @@ object DayEvents {
                 iso in 1..5
             }
             ReminderType.WEEKLY -> r.daysOfWeek.contains(isoDay(base))
+            ReminderType.MONTHLY -> base.get(Calendar.DAY_OF_MONTH) == r.dayOfMonth
+            ReminderType.YEARLY -> base.get(Calendar.MONTH) + 1 == r.monthOfYear &&
+                base.get(Calendar.DAY_OF_MONTH) == r.dayOfMonth
+            ReminderType.NDAYS -> {
+                val step = if (r.everyDays < 1) 1 else r.everyDays
+                val anchor = Calendar.getInstance().apply {
+                    timeInMillis = if (r.anchorMillis > 0) r.anchorMillis else r.createdAt
+                    set(Calendar.HOUR_OF_DAY, 0)
+                    set(Calendar.MINUTE, 0)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
+                }
+                val diff = ((start - anchor.timeInMillis) / 86_400_000L).toInt()
+                diff >= 0 && diff % step == 0
+            }
+            ReminderType.LOOP -> true
         }
     }
 
@@ -63,6 +79,7 @@ object DayEvents {
             val c = Calendar.getInstance().apply { timeInMillis = r.atMillis }
             c.get(Calendar.HOUR_OF_DAY) * 60 + c.get(Calendar.MINUTE)
         }
+        ReminderType.LOOP -> r.loopStartH * 60 + r.loopStartM
         else -> r.hour * 60 + r.minute
     }
 

@@ -21,6 +21,12 @@ object Fmt {
             val days = r.daysOfWeek.sorted().joinToString("、") { weekCn[(it - 1).coerceIn(0, 6)] }
             if (days.isEmpty()) "每周 ${hm(r.hour, r.minute)}" else "每周$days ${hm(r.hour, r.minute)}"
         }
+        ReminderType.MONTHLY -> "每月 ${r.dayOfMonth} 日 ${hm(r.hour, r.minute)}"
+        ReminderType.YEARLY -> "每年 ${r.monthOfYear} 月 ${r.dayOfMonth} 日 ${hm(r.hour, r.minute)}"
+        ReminderType.NDAYS -> "每隔 ${r.everyDays} 天 ${hm(r.hour, r.minute)}"
+        ReminderType.LOOP ->
+            "每天 ${hm(r.loopStartH, r.loopStartM)}–${hm(r.loopEndH, r.loopEndM)}，" +
+                "每 ${r.everyMin} 分钟"
     }
 
     /** 相对日期 + 时刻，例如「今天 15:00」「明天 09:00」「11月2日 08:00」 */

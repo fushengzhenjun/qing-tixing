@@ -98,7 +98,20 @@ object Notifier {
 
         val body = if (r.type == com.qingtx.qingtiixing.data.ReminderType.ONCE) Fmt.rule(r) else Fmt.rule(r)
 
-        val n = NotificationCompat.Builder(context, if (silent) CH_SILENT else channelFor(r.ring))
+        /* 全屏提醒页：锁屏或别的 app 开着时把提醒整个抬到前台，
+           对应电脑版那个「独立小窗盖在最上层」。
+           夜间免打扰时不拉全屏——半夜亮屏比响一声更烦人。 */
+        val fullScreen = PendingIntent.getActivity(
+            context,
+            r.id.hashCode() + 7,
+            Intent(context, com.qingtx.qingtiixing.AlarmActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                putExtra(com.qingtx.qingtiixing.AlarmActivity.EXTRA_ID, r.id)
+            },
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val builder = NotificationCompat.Builder(context, if (silent) CH_SILENT else channelFor(r.ring))
             .setSmallIcon(R.drawable.ic_stat_bell)
             .setContentTitle(r.title.ifBlank { "提醒" })
             .setContentText(body)
@@ -110,7 +123,11 @@ object Notifier {
             .setShowWhen(true)
             .addAction(0, "5 分钟后", snoozeAction(5))
             .addAction(0, "10 分钟后", snoozeAction(10))
-            .build()
+
+        if (!silent) {
+            builder.setFullScreenIntent(fullScreen, true)
+        }
+        val n = builder.build()
 
         runCatching { nm.notify(r.id.hashCode(), n) }
     }

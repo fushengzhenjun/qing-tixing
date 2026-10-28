@@ -13,6 +13,8 @@
     <uses-permission android:name="android.permission.VIBRATE" />
     <!-- 引导用户把本应用排除在省电优化之外（提醒类应用的正当用途） -->
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <!-- 到点把提醒页整个抬到最前（锁屏也显示）。Android 14+ 需用户在系统里允许 -->
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
 
     <application
         android:name=".QtxApp"
@@ -41,6 +43,17 @@
         <receiver
             android:name=".alarm.AlarmReceiver"
             android:exported="false" />
+
+        <!-- 到点全屏提醒页：由通知的 fullScreenIntent 拉起 -->
+        <activity
+            android:name=".AlarmActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:launchMode="singleInstance"
+            android:showOnLockScreen="true"
+            android:turnScreenOn="true"
+            android:taskAffinity=""
+            android:theme="@style/Theme.QingLing" />
 
         <!-- 稍后提醒：通知上的按钮 -->
         <receiver
