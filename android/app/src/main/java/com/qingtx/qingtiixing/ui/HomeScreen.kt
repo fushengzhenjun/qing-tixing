@@ -48,6 +48,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -82,6 +83,7 @@ fun HomeScreen(
     items: List<Reminder>,
     versionName: String,
     warnText: String?,
+    appBgUri: String,
     onAdd: () -> Unit,
     onEdit: (String) -> Unit,
     onToggle: (Reminder) -> Unit,
@@ -116,8 +118,19 @@ fun HomeScreen(
     }
     val totalOnDay = remember(items, picked) { DayEvents.on(items, pickedCal).size }
 
+    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    val cardSurface = if (appBgUri.isBlank()) {
+        MaterialTheme.colorScheme.surface
+    } else {
+        MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
+    }
+
+    BackgroundLayer(
+        uri = appBgUri.ifBlank { null },
+        scrim = if (isDark) Color.Black.copy(alpha = 0.5f) else Color.White.copy(alpha = 0.55f)
+    ) {
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = if (appBgUri.isBlank()) MaterialTheme.colorScheme.background else Color.Transparent,
         topBar = {
             TopAppBar(
                 title = {
@@ -184,7 +197,7 @@ fun HomeScreen(
             /* ---------- 大日历 ---------- */
             item {
                 Card(
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    colors = CardDefaults.cardColors(containerColor = cardSurface),
                     elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
                     modifier = Modifier
                         .fillMaxWidth()
@@ -254,6 +267,7 @@ fun HomeScreen(
                         items(shown, key = { it.id }) { r ->
                             ReminderCard(
                                 r = r,
+                                cardColor = cardSurface,
                                 onClick = { onEdit(r.id) },
                                 onToggle = { onToggle(r) }
                             )
@@ -311,6 +325,7 @@ fun HomeScreen(
                 }
             }
         }
+    }
     }
 }
 
@@ -435,13 +450,18 @@ private fun WarnBanner(text: String, onClick: () -> Unit) {
 }
 
 @Composable
-private fun ReminderCard(r: Reminder, onClick: () -> Unit, onToggle: () -> Unit) {
+private fun ReminderCard(
+    r: Reminder,
+    cardColor: Color,
+    onClick: () -> Unit,
+    onToggle: () -> Unit
+) {
     val next = if (r.enabled) NextFire.next(r, System.currentTimeMillis()) else null
     val accent = catColor(r.category)
     Card(
         onClick = onClick,
         shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        colors = CardDefaults.cardColors(containerColor = cardColor),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         modifier = Modifier
             .fillMaxWidth()

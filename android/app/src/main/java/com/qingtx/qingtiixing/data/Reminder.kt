@@ -77,12 +77,10 @@ object NextFire {
         return when (r.type) {
             ReminderType.ONCE -> if (r.atMillis > from) r.atMillis else null
             ReminderType.DAILY -> nextAt(from, r.hour, r.minute) { true }
-            ReminderType.WEEKDAY -> nextAt(from, r.hour, r.minute) { d ->
-                d != Calendar.SATURDAY && d != Calendar.SUNDAY
-            }
+            ReminderType.WEEKDAY -> nextAt(from, r.hour, r.minute) { Holiday.isWorkday(it) }
             ReminderType.WEEKLY -> {
                 if (r.daysOfWeek.isEmpty()) null
-                else nextAt(from, r.hour, r.minute) { d -> r.daysOfWeek.contains(isoDay(d)) }
+                else nextAt(from, r.hour, r.minute) { r.daysOfWeek.contains(isoDay(it.get(Calendar.DAY_OF_WEEK))) }
             }
             ReminderType.MONTHLY -> nextMonthly(r, from)
             ReminderType.YEARLY -> nextYearly(r, from)
@@ -204,7 +202,7 @@ object NextFire {
     /** Calendar 的周日是 1、周一是 2……这里统一成 1=周一 … 7=周日 */
     fun isoDay(calendarDay: Int): Int = if (calendarDay == Calendar.SUNDAY) 7 else calendarDay - 1
 
-    private fun nextAt(from: Long, hour: Int, minute: Int, dayOk: (Int) -> Boolean): Long? {
+    private fun nextAt(from: Long, hour: Int, minute: Int, dayOk: (Calendar) -> Boolean): Long? {
         val c = Calendar.getInstance().apply {
             timeInMillis = from
             set(Calendar.HOUR_OF_DAY, hour)
@@ -213,9 +211,9 @@ object NextFire {
             set(Calendar.MILLISECOND, 0)
         }
         if (c.timeInMillis <= from) c.add(Calendar.DAY_OF_YEAR, 1)
-        /* 最多往后找 8 天，够覆盖「每周某一天」这种情况 */
-        repeat(8) {
-            if (dayOk(c.get(Calendar.DAY_OF_WEEK))) return c.timeInMillis
+        /* 往后找 40 天：国庆连休 7 天再加上调休，8 天不够用 */
+        repeat(40) {
+            if (dayOk(c)) return c.timeInMillis
             c.add(Calendar.DAY_OF_YEAR, 1)
         }
         return null

@@ -46,10 +46,7 @@ object DayEvents {
         return when (r.type) {
             ReminderType.ONCE -> r.atMillis >= start && r.atMillis < end
             ReminderType.DAILY -> true
-            ReminderType.WEEKDAY -> {
-                val iso = isoDay(base)
-                iso in 1..5
-            }
+            ReminderType.WEEKDAY -> Holiday.isWorkday(base)
             ReminderType.WEEKLY -> r.daysOfWeek.contains(isoDay(base))
             ReminderType.MONTHLY -> base.get(Calendar.DAY_OF_MONTH) == r.dayOfMonth
             ReminderType.YEARLY -> base.get(Calendar.MONTH) + 1 == r.monthOfYear &&

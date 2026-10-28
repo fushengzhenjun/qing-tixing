@@ -28,7 +28,13 @@ data class SettingsSnapshot(
     /** 一天内的分钟数，22*60+30 表示 22:30 */
     val dndStart: Int = 22 * 60 + 30,
     val dndEnd: Int = 7 * 60,
-    val theme: ThemeMode = ThemeMode.SYSTEM
+    val theme: ThemeMode = ThemeMode.SYSTEM,
+    /** 主界面背景图的 content:// URI，空表示没设 */
+    val appBgUri: String = "",
+    /** 到点提醒页的背景图，和主界面分开设 */
+    val alarmBgUri: String = "",
+    /** 工作日是否跟随法定节假日 */
+    val holidayAware: Boolean = true
 ) {
 
     fun pausedNow(now: Long = System.currentTimeMillis()): Boolean =
@@ -86,6 +92,9 @@ object Settings {
     private const val K_DND_START = "dndStart"
     private const val K_DND_END = "dndEnd"
     private const val K_THEME = "theme"
+    private const val K_APP_BG = "appBgUri"
+    private const val K_ALARM_BG = "alarmBgUri"
+    private const val K_HOLIDAY = "holidayAware"
 
     private var sp: SharedPreferences? = null
 
@@ -105,8 +114,12 @@ object Settings {
             dndOn = p.getBoolean(K_DND_ON, false),
             dndStart = p.getInt(K_DND_START, 22 * 60 + 30),
             dndEnd = p.getInt(K_DND_END, 7 * 60),
-            theme = runCatching { ThemeMode.valueOf(themeName) }.getOrDefault(ThemeMode.SYSTEM)
+            theme = runCatching { ThemeMode.valueOf(themeName) }.getOrDefault(ThemeMode.SYSTEM),
+            appBgUri = p.getString(K_APP_BG, "") ?: "",
+            alarmBgUri = p.getString(K_ALARM_BG, "") ?: "",
+            holidayAware = p.getBoolean(K_HOLIDAY, true)
         )
+        Holiday.aware = _flow.value.holidayAware
     }
 
     /**
@@ -131,10 +144,29 @@ object Settings {
         sp?.edit()?.putInt(K_DND_START, start)?.putInt(K_DND_END, end)?.apply()
     }
 
+    fun setHolidayAware(on: Boolean) {
+        val s = _flow.value.copy(holidayAware = on)
+        _flow.value = s
+        Holiday.aware = on
+        sp?.edit()?.putBoolean(K_HOLIDAY, on)?.apply()
+    }
+
     fun setTheme(mode: ThemeMode) {
         val s = _flow.value.copy(theme = mode)
         _flow.value = s
         sp?.edit()?.putString(K_THEME, mode.name)?.apply()
+    }
+
+    fun setAppBg(uri: String) {
+        val s = _flow.value.copy(appBgUri = uri)
+        _flow.value = s
+        sp?.edit()?.putString(K_APP_BG, uri)?.apply()
+    }
+
+    fun setAlarmBg(uri: String) {
+        val s = _flow.value.copy(alarmBgUri = uri)
+        _flow.value = s
+        sp?.edit()?.putString(K_ALARM_BG, uri)?.apply()
     }
 
     /** 供 Receiver 用的快捷判断：进程可能是新起的，先确保 init 过 */

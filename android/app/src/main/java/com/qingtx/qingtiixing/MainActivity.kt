@@ -123,6 +123,7 @@ private fun AppRoot() {
                 items = list,
                 versionName = versionName,
                 warnText = warn,
+                appBgUri = prefs.appBgUri,
                 onAdd = { screen = Screen.Editor(null) },
                 onEdit = { id -> screen = Screen.Editor(id) },
                 onToggle = { r: Reminder ->
@@ -189,6 +190,11 @@ private fun AppRoot() {
             onDndToggle = { AppPrefs.setDndOn(it) },
             onDndRange = { start, end -> AppPrefs.setDndRange(start, end) },
             onTheme = { AppPrefs.setTheme(it) },
+            onHolidayAware = { AppPrefs.setHolidayAware(it) },
+            onPickAppBg = { AppPrefs.setAppBg(it) },
+            onClearAppBg = { AppPrefs.setAppBg("") },
+            onPickAlarmBg = { AppPrefs.setAlarmBg(it) },
+            onClearAlarmBg = { AppPrefs.setAlarmBg("") },
             onBack = { screen = Screen.Home }
         )
     }

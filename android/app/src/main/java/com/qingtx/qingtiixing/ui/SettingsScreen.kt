@@ -1,6 +1,9 @@
 package com.qingtx.qingtiixing.ui
 
 import android.app.TimePickerDialog
+import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -66,9 +69,30 @@ fun SettingsScreen(
     onDndToggle: (Boolean) -> Unit,
     onDndRange: (Int, Int) -> Unit,
     onTheme: (ThemeMode) -> Unit,
+    onHolidayAware: (Boolean) -> Unit,
+    onPickAppBg: (String) -> Unit,
+    onClearAppBg: () -> Unit,
+    onPickAlarmBg: (String) -> Unit,
+    onClearAlarmBg: () -> Unit,
     onBack: () -> Unit
 ) {
     val ctx = LocalContext.current
+
+    /* 选图走系统的文件选择器（SAF），不需要读相册权限；
+       选完必须 takePersistableUriPermission，否则重启后 URI 就失效了 */
+    var bgTarget by remember { mutableIntStateOf(0) }
+    val picker = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) {
+            runCatching {
+                ctx.contentResolver.takePersistableUriPermission(
+                    uri, Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+            }
+            if (bgTarget == 1) onPickAppBg(uri.toString()) else onPickAlarmBg(uri.toString())
+        }
+    }
 
     /* 「还剩 X 分钟」需要自己走：SharedPreferences 里存的只是一个时间戳，
        没人通知界面时间过去了。20 秒一刷，够用且几乎不耗电。 */
@@ -106,36 +130,58 @@ fun SettingsScreen(
         ) {
 
             /* ---------- 权限：这三项不解决，提醒根本不会响，所以放最上面 ---------- */
-            Text(
-                "这三项都打开，提醒才会准时响",
-                fontSize = 12.5.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 4.dp, bottom = 10.dp)
-            )
-
-            PermissionCard(
-                title = "通知权限",
-                desc = if (notifGranted) "已开启，到点会弹通知" else "没开的话，到点了什么都不会发生",
-                ok = notifGranted,
-                actionText = "去开启",
-                onAction = onRequestNotif
-            )
-            Spacer(Modifier.height(10.dp))
-            PermissionCard(
-                title = "精确闹钟",
-                desc = if (exactOk) "已允许，可以准点响" else "未允许，系统可能把提醒推迟几分钟到几十分钟",
-                ok = exactOk,
-                actionText = "去允许",
-                onAction = onRequestExact
-            )
-            Spacer(Modifier.height(10.dp))
-            PermissionCard(
-                title = "电池优化",
-                desc = if (batteryOk) "已排除，后台不会被冻结" else "仍受限制，长时间不用可能不响",
-                ok = batteryOk,
-                actionText = "去设置",
-                onAction = onRequestBattery
-            )
+            /* 三项都正常时不再占三张卡：设置页一进来就该看到能调的东西，
+               而不是三行「已开启」。缺哪项才展开哪项。 */
+            if (notifGranted && exactOk && batteryOk) {
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(top = 4.dp)
+                        .clip(MaterialTheme.shapes.medium)
+                        .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f))
+                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    StatusDot(true)
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        "通知、精确闹钟、电池优化都已就绪",
+                        fontSize = 12.5.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+            } else {
+                Text(
+                    "下面三项没弄好，到点可能不响",
+                    fontSize = 12.5.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp, bottom = 10.dp)
+                )
+                PermissionCard(
+                    title = "通知权限",
+                    desc = if (notifGranted) "已开启，到点会弹通知" else "没开的话，到点了什么都不会发生",
+                    ok = notifGranted,
+                    actionText = "去开启",
+                    onAction = onRequestNotif
+                )
+                Spacer(Modifier.height(10.dp))
+                PermissionCard(
+                    title = "精确闹钟",
+                    desc = if (exactOk) "已允许，可以准点响" else "未允许，系统可能把提醒推迟几分钟到几十分钟",
+                    ok = exactOk,
+                    actionText = "去允许",
+                    onAction = onRequestExact
+                )
+                Spacer(Modifier.height(10.dp))
+                PermissionCard(
+                    title = "电池优化",
+                    desc = if (batteryOk) "已排除，后台不会被冻结" else "仍受限制，长时间不用可能不响",
+                    ok = batteryOk,
+                    actionText = "去设置",
+                    onAction = onRequestBattery
+                )
+            }
 
             /* ---------- 常规 ---------- */
             SectionLabel("常规", top = 22.dp)
@@ -187,12 +233,41 @@ fun SettingsScreen(
                         }
                     }
                 }
+
+                Divider()
+
+                BgRow(
+                    title = "主界面背景",
+                    desc = if (prefs.appBgUri.isBlank()) "选一张图铺在首页后面" else "已设置 · 点右侧可更换",
+                    has = prefs.appBgUri.isNotBlank(),
+                    onPick = { bgTarget = 1; picker.launch(arrayOf("image/*")) },
+                    onClear = onClearAppBg
+                )
+
+                Divider()
+
+                BgRow(
+                    title = "提醒页背景",
+                    desc = if (prefs.alarmBgUri.isBlank()) "给到点弹窗单独换一张图" else "已设置 · 点右侧可更换",
+                    has = prefs.alarmBgUri.isNotBlank(),
+                    onPick = { bgTarget = 2; picker.launch(arrayOf("image/*")) },
+                    onClear = onClearAlarmBg
+                )
             }
 
             /* ---------- 提醒 ---------- */
             SectionLabel("提醒")
 
             GroupCard {
+                SwitchRow(
+                    title = "工作日跟随法定节假日",
+                    desc = if (prefs.holidayAware) "放假期间不提醒，调休上班日照常提醒" else "只按周一到周五算",
+                    checked = prefs.holidayAware,
+                    onChecked = onHolidayAware
+                )
+
+                Divider()
+
                 SwitchRow(
                     title = "夜间免打扰",
                     desc = if (prefs.dndOn) "时段内静音、不振动，提醒仍会记录" else "夜里到点也不吵你",
@@ -336,6 +411,48 @@ private fun Divider() {
             .height(1.dp)
             .background(MaterialTheme.colorScheme.outlineVariant)
     )
+}
+
+
+@Composable
+private fun BgRow(
+    title: String,
+    desc: String,
+    has: Boolean,
+    onPick: () -> Unit,
+    onClear: () -> Unit
+) {
+    Row(
+        Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(title, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+            Spacer(Modifier.height(3.dp))
+            Text(desc, fontSize = 12.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        if (has) {
+            Text(
+                "移除",
+                fontSize = 13.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier
+                    .clip(MaterialTheme.shapes.small)
+                    .clickable(onClick = onClear)
+                    .padding(horizontal = 10.dp, vertical = 8.dp)
+            )
+        }
+        Text(
+            if (has) "更换" else "选择",
+            fontSize = 13.5.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier
+                .clip(MaterialTheme.shapes.small)
+                .clickable(onClick = onPick)
+                .padding(horizontal = 10.dp, vertical = 8.dp)
+        )
+    }
 }
 
 @Composable

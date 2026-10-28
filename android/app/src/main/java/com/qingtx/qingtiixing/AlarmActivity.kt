@@ -41,7 +41,9 @@ import androidx.core.app.NotificationManagerCompat
 import com.qingtx.qingtiixing.alarm.Scheduler
 import com.qingtx.qingtiixing.data.Fmt
 import com.qingtx.qingtiixing.data.Reminder
+import com.qingtx.qingtiixing.data.Settings
 import com.qingtx.qingtiixing.data.Store
+import com.qingtx.qingtiixing.ui.BackgroundLayer
 import com.qingtx.qingtiixing.ui.QtxTheme
 import java.util.Calendar
 
@@ -88,6 +90,7 @@ class AlarmActivity : ComponentActivity() {
             QtxTheme(dark = true) {
                 AlarmScreen(
                     r = r,
+                    bgUri = Settings.current.alarmBgUri,
                     onDismiss = {
                         cancelNotification(r)
                         finish()
@@ -110,6 +113,7 @@ class AlarmActivity : ComponentActivity() {
 @Composable
 private fun AlarmScreen(
     r: Reminder,
+    bgUri: String,
     onDismiss: () -> Unit,
     onSnooze: (Int) -> Unit
 ) {
@@ -118,13 +122,19 @@ private fun AlarmScreen(
     val mm = now.get(Calendar.MINUTE)
     val time = (if (hh < 10) "0$hh" else "$hh") + ":" + (if (mm < 10) "0$mm" else "$mm")
 
+    BackgroundLayer(
+        uri = bgUri.ifBlank { null },
+        scrim = Color.Black.copy(alpha = 0.72f)
+    ) {
     Box(
         Modifier
             .fillMaxSize()
             .background(
-                Brush.verticalGradient(
-                    listOf(Color(0xFF0E1A16), Color(0xFF0A0D0C))
-                )
+                if (bgUri.isBlank()) {
+                    Brush.verticalGradient(listOf(Color(0xFF0E1A16), Color(0xFF0A0D0C)))
+                } else {
+                    Brush.verticalGradient(listOf(Color.Transparent, Color.Transparent))
+                }
             )
             .padding(horizontal = 28.dp)
     ) {
@@ -209,6 +219,7 @@ private fun AlarmScreen(
 
             Spacer(Modifier.height(56.dp))
         }
+    }
     }
 }
 
