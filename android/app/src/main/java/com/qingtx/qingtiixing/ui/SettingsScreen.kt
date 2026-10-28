@@ -23,6 +23,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.PriorityHigh
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -40,6 +42,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -74,6 +77,15 @@ fun SettingsScreen(
     onClearAppBg: () -> Unit,
     onPickAlarmBg: (String) -> Unit,
     onClearAlarmBg: () -> Unit,
+    itemCount: Int,
+    backupCount: Int,
+    backupLatest: String,
+    onExportJson: (android.net.Uri) -> String,
+    onExportIcs: (android.net.Uri) -> String,
+    onImportFile: (android.net.Uri) -> String,
+    onRestoreLatest: () -> String,
+    onClearAll: () -> String,
+    onTestFire: () -> String,
     onBack: () -> Unit
 ) {
     val ctx = LocalContext.current
@@ -93,6 +105,25 @@ fun SettingsScreen(
             if (bgTarget == 1) onPickAppBg(uri.toString()) else onPickAlarmBg(uri.toString())
         }
     }
+
+    /* 导出/导入的即时反馈：做完了在这行字上告诉用户结果，
+       不用 Toast（Toast 在深色和全面屏上位置飘，容易看不见） */
+    var msg by remember { mutableStateOf<String?>(null) }
+
+    /* 清空是不可逆操作，点一下直接删太容易误触，加一层确认 */
+    var confirmClear by remember { mutableStateOf(false) }
+
+    val exportJson = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/json")
+    ) { uri -> if (uri != null) msg = onExportJson(uri) }
+
+    val exportIcs = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("text/calendar")
+    ) { uri -> if (uri != null) msg = onExportIcs(uri) }
+
+    val importFile = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri -> if (uri != null) msg = onImportFile(uri) }
 
     /* 「还剩 X 分钟」需要自己走：SharedPreferences 里存的只是一个时间戳，
        没人通知界面时间过去了。20 秒一刷，够用且几乎不耗电。 */
@@ -181,6 +212,33 @@ fun SettingsScreen(
                     actionText = "去设置",
                     onAction = onRequestBattery
                 )
+            }
+
+            /* 试发一条：出问题的时候才最需要它，所以不要求三项全部就绪，
+               只要通知权限在就给这个入口 */
+            if (notifGranted) {
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp)
+                        .clip(MaterialTheme.shapes.medium)
+                        .clickable { msg = onTestFire() }
+                        .padding(horizontal = 6.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "试发一条提醒",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        "10 秒后响，用来确认能不能正常弹出来",
+                        fontSize = 12.5.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
 
             /* ---------- 常规 ---------- */
@@ -310,6 +368,96 @@ fun SettingsScreen(
                 }
             }
 
+            /* ---------- 数据 ---------- */
+            SectionLabel("数据")
+
+            GroupCard {
+                DataRow(
+                    title = "导出数据文件",
+                    desc = "存成 JSON，电脑版能直接导入，换手机也靠它",
+                    action = "导出",
+                    onAction = { exportJson.launch(com.qingtx.qingtiixing.data.Transfer.jsonFileName()) }
+                )
+
+                Divider()
+
+                DataRow(
+                    title = "导入数据文件",
+                    desc = "认电脑版导出的 JSON，也认安卓自己的；导入会覆盖当前 $itemCount 条",
+                    action = "导入",
+                    onAction = { importFile.launch(arrayOf("application/json", "text/plain", "*/*")) }
+                )
+
+                Divider()
+
+                DataRow(
+                    title = "导出日历",
+                    desc = "存成 .ics，导入手机自带日历后两边都能看到",
+                    action = "导出",
+                    onAction = { exportIcs.launch(com.qingtx.qingtiixing.data.Transfer.icsFileName()) }
+                )
+
+                Divider()
+
+                DataRow(
+                    title = "从备份恢复",
+                    desc = if (backupCount == 0) {
+                        "每天自动存一份，现在还没有，先加几条提醒"
+                    } else {
+                        "最近 $backupLatest · 共 $backupCount 份，只留 14 天"
+                    },
+                    action = "恢复",
+                    enabled = backupCount > 0,
+                    onAction = { msg = onRestoreLatest() }
+                )
+
+                Divider()
+
+                DataRow(
+                    title = "清空全部提醒",
+                    desc = if (itemCount == 0) "本来就没有提醒" else "删掉这 $itemCount 条，清空前会自动存一份备份",
+                    action = "清空",
+                    danger = true,
+                    enabled = itemCount > 0,
+                    onAction = { confirmClear = true }
+                )
+            }
+
+            if (confirmClear) {
+                AlertDialog(
+                    onDismissRequest = { confirmClear = false },
+                    title = { Text("清空全部提醒？") },
+                    text = {
+                        Text(
+                            "会删掉这 $itemCount 条提醒，闹钟一并取消。\n" +
+                                "清空前会自动存一份备份，之后能在「从备份恢复」里找回。"
+                        )
+                    },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            confirmClear = false
+                            msg = onClearAll()
+                        }) {
+                            Text("清空", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { confirmClear = false }) { Text("取消") }
+                    }
+                )
+            }
+
+            msg?.let {
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    it,
+                    fontSize = 12.5.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(horizontal = 4.dp)
+                )
+            }
+
             /* ---------- 国产 ROM 提示 ---------- */
             Spacer(Modifier.height(18.dp))
             Card(
@@ -400,6 +548,53 @@ private fun GroupCard(content: @Composable androidx.compose.foundation.layout.Co
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(content = content)
+    }
+}
+
+@Composable
+private fun DataRow(
+    title: String,
+    desc: String,
+    action: String,
+    onAction: () -> Unit,
+    enabled: Boolean = true,
+    danger: Boolean = false
+) {
+    Row(
+        Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(
+                title,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 15.sp,
+                color = if (danger && enabled) MaterialTheme.colorScheme.error
+                else MaterialTheme.colorScheme.onSurface
+            )
+            Spacer(Modifier.height(3.dp))
+            Text(
+                desc,
+                fontSize = 12.5.sp,
+                lineHeight = 18.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        Spacer(Modifier.width(10.dp))
+        Text(
+            action,
+            fontSize = 13.5.sp,
+            fontWeight = FontWeight.Bold,
+            color = when {
+                !enabled -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f)
+                danger -> MaterialTheme.colorScheme.error
+                else -> MaterialTheme.colorScheme.primary
+            },
+            modifier = Modifier
+                .clip(MaterialTheme.shapes.small)
+                .clickable(enabled = enabled, onClick = onAction)
+                .padding(horizontal = 10.dp, vertical = 8.dp)
+        )
     }
 }
 

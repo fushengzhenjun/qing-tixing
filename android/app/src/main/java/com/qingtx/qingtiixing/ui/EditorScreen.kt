@@ -5,6 +5,7 @@ import android.app.TimePickerDialog
 import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -57,6 +58,29 @@ import com.qingtx.qingtiixing.data.Reminder
 import com.qingtx.qingtiixing.data.ReminderType
 import com.qingtx.qingtiixing.data.Ring
 import java.util.Calendar
+
+/**
+ * 常用模板。电脑版首页有一排，手机上放进编辑器——新建时点一下就填好，
+ * 比先选类型再调半天参数快得多。改任何一项都不会影响其他模板。
+ */
+private data class Tpl(
+    val name: String,
+    val type: ReminderType,
+    val category: Category,
+    val hour: Int = 9,
+    val minute: Int = 0,
+    val loopEndH: Int = 18,
+    val everyMin: Int = 45
+)
+
+private val TEMPLATES = listOf(
+    Tpl("喝水", ReminderType.LOOP, Category.HEALTH, 9, 0, 18, 60),
+    Tpl("起身活动", ReminderType.LOOP, Category.HEALTH, 9, 0, 18, 45),
+    Tpl("护眼远眺", ReminderType.LOOP, Category.HEALTH, 9, 0, 18, 30),
+    Tpl("服药", ReminderType.DAILY, Category.HEALTH, 8, 0),
+    Tpl("午睡", ReminderType.DAILY, Category.LIFE, 13, 0),
+    Tpl("睡觉", ReminderType.DAILY, Category.LIFE, 23, 0)
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -165,6 +189,33 @@ fun EditorScreen(
                 shape = MaterialTheme.shapes.medium,
                 modifier = Modifier.fillMaxWidth()
             )
+
+            /* 模板只在新建时出现：编辑已有提醒时冒出来，用户会以为点一下就改掉原设置 */
+            if (existing == null) {
+                SectionLabel("常用模板", top = 14.dp)
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    TEMPLATES.forEach { t ->
+                        TypeChip(t.name, false) {
+                            title = t.name
+                            type = t.type
+                            category = t.category
+                            hour = t.hour
+                            minute = t.minute
+                            loopStartH = t.hour
+                            loopStartM = t.minute
+                            loopEndH = t.loopEndH
+                            loopEndM = 0
+                            everyMin = t.everyMin
+                            error = null
+                        }
+                    }
+                }
+            }
 
             SectionLabel("类型")
             Row(
@@ -404,13 +455,13 @@ fun EditorScreen(
 }
 
 @Composable
-private fun SectionLabel(text: String) {
+private fun SectionLabel(text: String, top: androidx.compose.ui.unit.Dp = 20.dp) {
     Text(
         text,
         fontSize = 12.5.sp,
         fontWeight = FontWeight.Bold,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(top = 20.dp, bottom = 8.dp)
+        modifier = Modifier.padding(top = top, bottom = 8.dp)
     )
 }
 

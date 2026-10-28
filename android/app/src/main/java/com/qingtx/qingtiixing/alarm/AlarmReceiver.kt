@@ -18,10 +18,32 @@ class AlarmReceiver : BroadcastReceiver() {
     companion object {
         const val ACTION_FIRE = "com.qingtx.qingtiixing.action.FIRE"
         const val ACTION_SNOOZE_FIRE = "com.qingtx.qingtiixing.action.SNOOZE_FIRE"
+        /* 试发一条：只用来确认「闹钟→通知」这条链是通的，不读写任何提醒数据 */
+        const val ACTION_TEST = "com.qingtx.qingtiixing.action.TEST"
         const val EXTRA_ID = "id"
     }
 
     override fun onReceive(context: Context, intent: Intent) {
+        /* 试发：走的是真的 AlarmManager 唤醒 + 真的通知，只是不碰用户数据。
+           用户装了之后能立刻验证「到点到底会不会响」，不用等到真有事 */
+        if (intent.action == ACTION_TEST) {
+            Store.init(context)
+            Settings.init(context)
+            val now = java.util.Calendar.getInstance()
+            val demo = com.qingtx.qingtiixing.data.Reminder(
+                id = "test-notification",
+                title = "测试提醒",
+                type = ReminderType.ONCE,
+                atMillis = System.currentTimeMillis(),
+                hour = now.get(java.util.Calendar.HOUR_OF_DAY),
+                minute = now.get(java.util.Calendar.MINUTE)
+            )
+            /* 测试不走暂停/免打扰判断：用户点这个按钮就是想看到效果，
+               被自己的夜间免打扰挡掉反而会以为软件坏了 */
+            Notifier.show(context, demo)
+            return
+        }
+
         val id = intent.getStringExtra(EXTRA_ID) ?: return
         Store.init(context)
         Settings.init(context)

@@ -42,6 +42,30 @@ class Scheduler(private val context: Context) {
         runCatching { am.cancel(pending(id, snooze = false)) }
     }
 
+    /** 试发一条，10 秒后走正常唤醒链路。返回触发时刻，界面用来倒计时。 */
+    fun scheduleTest(seconds: Int = 10): Long {
+        val at = System.currentTimeMillis() + seconds * 1000L
+        val intent = Intent(context, AlarmReceiver::class.java).apply {
+            action = AlarmReceiver.ACTION_TEST
+        }
+        val p = PendingIntent.getBroadcast(
+            context,
+            990001,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        try {
+            if (canExact()) {
+                am.setAlarmClock(AlarmManager.AlarmClockInfo(at, showApp("test-notification")), p)
+            } else {
+                am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, p)
+            }
+        } catch (e: SecurityException) {
+            runCatching { am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, p) }
+        }
+        return at
+    }
+
     fun rescheduleAll() {
         Store.all().forEach { if (it.enabled) schedule(it) else cancel(it.id) }
     }

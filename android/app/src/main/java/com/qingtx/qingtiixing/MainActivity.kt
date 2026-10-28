@@ -32,6 +32,7 @@ import com.qingtx.qingtiixing.data.Reminder
 import com.qingtx.qingtiixing.data.Settings as AppPrefs
 import com.qingtx.qingtiixing.data.Store
 import com.qingtx.qingtiixing.data.ThemeMode
+import com.qingtx.qingtiixing.data.Transfer
 import com.qingtx.qingtiixing.ui.EditorScreen
 import com.qingtx.qingtiixing.ui.HomeScreen
 import com.qingtx.qingtiixing.ui.QtxTheme
@@ -81,11 +82,15 @@ private fun AppRoot() {
     var notifGranted by remember { mutableStateOf(hasNotif(ctx)) }
     var exactOk by remember { mutableStateOf(Scheduler(ctx).canExact()) }
     var batteryOk by remember { mutableStateOf(isBatteryFree(ctx)) }
+    var backupFiles by remember { mutableStateOf(Transfer.backups(ctx)) }
 
     fun refresh() {
         notifGranted = hasNotif(ctx)
         exactOk = Scheduler(ctx).canExact()
         batteryOk = isBatteryFree(ctx)
+        /* 每天第一次进应用时存一份：只在文件不存在时写，所以频繁调用也不费事 */
+        Transfer.autoBackup(ctx, Store.all())
+        backupFiles = Transfer.backups(ctx)
     }
 
     val notifLauncher = rememberLauncherForActivityResult(
@@ -195,9 +200,90 @@ private fun AppRoot() {
             onClearAppBg = { AppPrefs.setAppBg("") },
             onPickAlarmBg = { AppPrefs.setAlarmBg(it) },
             onClearAlarmBg = { AppPrefs.setAlarmBg("") },
+            itemCount = list.size,
+            backupCount = backupFiles.size,
+            backupLatest = backupFiles.firstOrNull()?.let { Transfer.backupTime(it) } ?: "",
+            onExportJson = { uri -> exportText(ctx, uri, Transfer.toDesktopJson(list), "已导出 ${list.size} 条") },
+            onExportIcs = { uri ->
+                val r = Transfer.toIcs(list)
+                if (r.count == 0) {
+                    "没有可导出的提醒"
+                } else {
+                    val tail = if (r.skipped > 0) "（${r.skipped} 条跳过）" else ""
+                    exportText(ctx, uri, r.text, "已导出 ${r.count} 条$tail")
+                }
+            },
+            onImportFile = { uri ->
+                val text = readText(ctx, uri)
+                if (text == null) {
+                    "读不到这个文件"
+                } else {
+                    runCatching {
+                        val res = Transfer.fromJson(text)
+                        replaceAll(ctx, res.list)
+                        val tail = if (res.skipped > 0) "，跳过 ${res.skipped} 条" else ""
+                        "已从${res.source}导入 ${res.list.size} 条$tail"
+                    }.getOrElse { "文件格式不对，没有改动" }
+                }
+            },
+            onRestoreLatest = {
+                val latest = backupFiles.firstOrNull()
+                if (latest == null) {
+                    "还没有备份"
+                } else {
+                    runCatching {
+                        val res = Transfer.fromJson(latest.readText())
+                        replaceAll(ctx, res.list)
+                        "已恢复到 ${Transfer.backupTime(latest)} 的 ${res.list.size} 条"
+                    }.getOrElse { "备份文件读不出来" }
+                }
+            },
+            onClearAll = {
+                if (list.isEmpty()) {
+                    "本来就没有提醒"
+                } else {
+                    /* 清空前打一份带时分秒的快照：autoBackup 一天只写一次，
+                       用户上午加了几条、下午清空，那份快照里就没有下午的 */
+                    Transfer.snapshotNow(ctx, list)
+                    val n = list.size
+                    runCatching { Store.save(emptyList()) }
+                    list.forEach { Scheduler(ctx).cancel(it.id) }
+                    backupFiles = Transfer.backups(ctx)
+                    "已清空 $n 条，可在「从备份恢复」里找回"
+                }
+            },
+            onTestFire = {
+                Scheduler(ctx).scheduleTest(10)
+                "10 秒后会响一条测试提醒，可以切到桌面或锁屏看看效果"
+            },
             onBack = { screen = Screen.Home }
         )
     }
+}
+
+/** 写文件到用户选的位置。返回给设置页显示的一句话。 */
+private fun exportText(ctx: android.content.Context, uri: Uri, text: String, okMsg: String): String =
+    runCatching {
+        ctx.contentResolver.openOutputStream(uri)?.use { it.write(text.toByteArray(Charsets.UTF_8)) }
+            ?: return@runCatching "打不开这个位置"
+        okMsg
+    }.getOrElse { "保存失败，换个位置再试" }
+
+private fun readText(ctx: android.content.Context, uri: Uri): String? = runCatching {
+    ctx.contentResolver.openInputStream(uri)?.use { it.readBytes().toString(Charsets.UTF_8) }
+}.getOrNull()
+
+/**
+ * 整批替换。
+ *
+ * 必须先 cancel 旧的闹钟再写新数据：PendingIntent 是按提醒 id 注册的，
+ * 被删掉的那些如果不清掉，会一直挂在系统闹钟表里，到点还响一次「幽灵提醒」。
+ */
+private fun replaceAll(ctx: android.content.Context, newList: List<Reminder>) {
+    val sched = Scheduler(ctx)
+    Store.all().forEach { sched.cancel(it.id) }
+    Store.save(newList)
+    sched.rescheduleAll()
 }
 
 private fun hasNotif(ctx: android.content.Context): Boolean {
