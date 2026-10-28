@@ -85,11 +85,14 @@ node ../tools/release.js  # 出安装包 + 绿色版 + SHA256
 **安卓版**（需要 JDK 17、Android SDK 35）
 
 ```bash
-cd android
-./gradlew :app:assembleRelease
+node tools/android_release.js
 ```
 
-签名信息放在 `android/keystore.properties`（已在 `.gitignore` 中排除，自行生成）。
+会编译 release 包、校验签名、复制到 `发布\安卓\` 并算 SHA256，也会重生成商店图标。
+只想要安装包的话，`cd android && ./gradlew :app:assembleRelease` 也一样。
+
+签名信息放在 `android/keystore.properties`（已在 `.gitignore` 中排除，自行生成），
+证书在 `.signing-android/qingtixing.jks`。两份都要备份，丢了就发不了更新。
 
 ## 隐私
 
