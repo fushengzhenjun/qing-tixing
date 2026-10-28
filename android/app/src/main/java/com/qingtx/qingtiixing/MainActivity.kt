@@ -82,12 +82,15 @@ private fun AppRoot() {
     var notifGranted by remember { mutableStateOf(hasNotif(ctx)) }
     var exactOk by remember { mutableStateOf(Scheduler(ctx).canExact()) }
     var batteryOk by remember { mutableStateOf(isBatteryFree(ctx)) }
+    /* Android 14 起 USE_FULL_SCREEN_INTENT 要用户自己再允许一次，低版本视为已允许 */
+    var fullScreenOk by remember { mutableStateOf(canFullScreen(ctx)) }
     var backupFiles by remember { mutableStateOf(Transfer.backups(ctx)) }
 
     fun refresh() {
         notifGranted = hasNotif(ctx)
         exactOk = Scheduler(ctx).canExact()
         batteryOk = isBatteryFree(ctx)
+        fullScreenOk = canFullScreen(ctx)
         /* 每天第一次进应用时存一份：只在文件不存在时写，所以频繁调用也不费事 */
         Transfer.autoBackup(ctx, Store.all())
         backupFiles = Transfer.backups(ctx)
@@ -176,9 +179,12 @@ private fun AppRoot() {
 
         is Screen.Settings -> SettingsScreen(
             versionName = versionName,
+            androidLabel = "Android ${Build.VERSION.RELEASE} · SDK ${Build.VERSION.SDK_INT}",
+            sdkInt = Build.VERSION.SDK_INT,
             notifGranted = notifGranted,
             exactOk = exactOk,
             batteryOk = batteryOk,
+            fullScreenAllowed = fullScreenOk,
             prefs = prefs,
             onRequestNotif = {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -198,6 +204,7 @@ private fun AppRoot() {
                 }
             },
             onRequestBattery = { requestBatteryExemption(ctx) },
+            onRequestFullScreen = { openFullScreenIntentSettings(ctx) },
             onPauseToggle = { on ->
                 /* 打开时先给个默认值：暂停 1 小时。用户可以在下面几档里改 */
                 AppPrefs.setPauseAll(on, if (on) AppPrefs.untilFrom(60) else 0L)
@@ -341,6 +348,32 @@ private fun requestBatteryExemption(ctx: android.content.Context) {
     val ok = runCatching { ctx.startActivity(direct) }.isSuccess
     if (!ok) {
         runCatching { ctx.startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)) }
+    }
+}
+
+/** Android 14+ 才有的开关：没允许的话锁屏弹不出全屏提醒，只能出横幅 */
+private fun canFullScreen(ctx: android.content.Context): Boolean {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) return true
+    val nm = ctx.getSystemService(android.app.NotificationManager::class.java) ?: return true
+    return runCatching { nm.canUseFullScreenIntent() }.getOrDefault(true)
+}
+
+private fun openFullScreenIntentSettings(ctx: android.content.Context) {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) return
+    val ok = runCatching {
+        ctx.startActivity(
+            Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT)
+                .setData(Uri.parse("package:${ctx.packageName}"))
+        )
+    }.isSuccess
+    /* 个别 ROM 没这个页面，退回到应用详情，用户还能在「特殊权限」里找 */
+    if (!ok) {
+        runCatching {
+            ctx.startActivity(
+                Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                    .setData(Uri.parse("package:${ctx.packageName}"))
+            )
+        }
     }
 }
 
