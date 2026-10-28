@@ -287,7 +287,9 @@ const sums = [
   [zipName, zipPath]
 ];
 const lines = sums.map(([name, p]) => sha256(p) + "  " + name);
-fs.writeFileSync(path.join(REL, "SHA256SUMS.txt"), lines.join("\r\n") + "\r\n", "utf8");
+/* 用 LF 换行：Windows 记事本早就能正常显示，而 `sha256sum -c` 在 Git Bash / WSL 下
+   遇到 CRLF 会把 \r 当成文件名的一部分，校验直接失败（踩过） */
+fs.writeFileSync(path.join(REL, "SHA256SUMS.txt"), lines.join("\n") + "\n", "utf8");
 
 /* 同步到本机运行目录（桌面快捷方式指向这里，出包后最容易忘记更新）
    统一交给 tools/sync_run_dir.js：逐文件复制、被占用只报告不中断，

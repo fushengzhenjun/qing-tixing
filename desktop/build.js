@@ -170,6 +170,11 @@ async function main() {
       /^\/selftest/,
       /^\/(installer|uninstaller)[A-Za-z]*\.(bmp|ico)$/   /* 安装向导素材，只给 NSIS 用，不该进绿色版 */
     ],
+    /* 版权信息只认顶层 appCopyright：@electron/packager 内部把
+       opts.appCopyright 映射成版本资源里的 LegalCopyright，
+       写在 win32metadata 里的 LegalCopyright 会被静默丢掉，
+       结果是 exe 属性显示 Electron 自带的 "GitHub, Inc."（踩过一次）。 */
+    appCopyright: "Copyright © 2026 fushengzhenjun",
     win32metadata: {
       CompanyName: "fushengzhenjun",
       FileDescription: "轻铃 · 简洁无广告的定时提醒",
@@ -177,8 +182,7 @@ async function main() {
       OriginalFilename: "轻铃.exe",
       InternalName: "轻铃",
       FileVersion: VERSION,
-      ProductVersion: VERSION,
-      LegalCopyright: "Copyright © 2026 fushengzhenjun"
+      ProductVersion: VERSION
     }
   });
 
