@@ -64,7 +64,7 @@
     </div>
     <h1>轻铃 · 隐私政策</h1>
     <p>一款完全离线、纯本地运行的到点提醒软件</p>
-    <p>生效日期：2026 年 10 月 25 日</p>
+    <p>生效日期：2026 年 11 月 1 日　·　适用于桌面版与安卓版</p>
   </div>
 
   <div class="wrap">
@@ -83,49 +83,88 @@
     </div>
 
     <section>
+      <h3><span class="n">0</span>这份政策管哪些版本</h3>
+      <p>同时适用于<strong>轻铃电脑版</strong>（Windows 绿色版 / 安装版）与<strong>轻铃安卓版</strong>（Android 8.0 及以上）。两端的存储位置和权限清单不同，下面分开写清楚。共同点是：<strong>两端都不联网，都不收集任何信息</strong>。</p>
+    </section>
+
+    <section>
       <h3><span class="n">1</span>我们如何对待你的数据</h3>
-      <p>本软件为纯本地应用，<strong>不包含任何网络通信功能</strong>。我们不会、也无法收集、上传、存储、共享或出售任何个人信息或设备信息。软件中不存在任何广告、第三方统计分析、行为追踪或崩溃上报组件。</p>
+      <p>本软件为纯本地应用，<strong>不包含任何网络通信功能</strong>。安卓版连「网络访问」这项系统权限都没有申请，在系统层面就无法建立任何网络连接——你可以在手机的「应用信息 → 权限」里直接核对。我们不会、也无法收集、上传、存储、共享或出售任何个人信息或设备信息。软件中不存在任何广告、第三方统计分析、行为追踪或崩溃上报组件。</p>
     </section>
 
     <section>
       <h3><span class="n">2</span>数据存储在哪里</h3>
-      <p>你创建的提醒、设置、分类等全部数据，仅通过浏览器本地存储（localStorage）保存在你的电脑本地应用数据目录中，不会离开这台设备。</p>
-      <p class="kv">删除方式：在软件「设置 → 清空全部提醒」中删除；卸载软件即移除程序文件。</p>
+      <p><strong>电脑版：</strong>提醒、设置、分类等数据通过浏览器本地存储（localStorage）保存在你的电脑本地应用数据目录中，不会离开这台设备。</p>
+      <p><strong>安卓版：</strong>数据保存在本应用的私有目录中（<code>/data/data/com.qingtx.qingtiixing/</code>），包括提醒内容、设置项与每日自动备份。这是 Android 的沙箱目录，其他应用无法读取，也不会写入公共存储空间。</p>
+      <p>两端都不会同步到云端。只有你主动点「导出」时，内容才会写到你当场选定的那个位置。</p>
     </section>
 
     <section>
       <h3><span class="n">3</span>系统权限说明</h3>
+      <p><strong>电脑版</strong></p>
       <ul>
         <li><strong>系统通知：</strong>仅用于在到点时在本机弹出提醒，不向任何外部发送。</li>
         <li><strong>开机自启动：</strong>仅在你主动开启后，于本机注册表写入开机启动项，可随时关闭，不涉及任何联网行为。</li>
         <li><strong>后台运行 / 系统托盘：</strong>仅用于保证关闭窗口后仍能准时提醒，全部在本机完成。</li>
         <li><strong>声音与振动：</strong>由系统本地播放，不读取、不上传任何音频或文件。</li>
       </ul>
+      <p><strong>安卓版</strong>（逐条列出，均为「到点能响」所必需，没有一项用于收集信息）</p>
+      <ul>
+        <li><strong>通知（POST_NOTIFICATIONS）：</strong>到点时在本机弹出提醒。可拒绝，拒绝后到点不会有任何提示。</li>
+        <li><strong>精确闹钟（SCHEDULE_EXACT_ALARM）：</strong>按你设定的那一分钟准时响。可拒绝，拒绝后系统会把提醒往后挪。</li>
+        <li><strong>开机自启（RECEIVE_BOOT_COMPLETED）：</strong>手机重启后把未到期的提醒重新登记一遍，否则重启后不再提醒。安装时自动获得。</li>
+        <li><strong>振动（VIBRATE）：</strong>到点振动。安装时自动获得，可在应用设置里关掉。</li>
+        <li><strong>忽略电池优化（REQUEST_IGNORE_BATTERY_OPTIMIZATIONS）：</strong>避免后台被系统冻结导致迟响，需你在系统弹窗里手动确认，可拒绝。</li>
+        <li><strong>全屏通知（USE_FULL_SCREEN_INTENT）：</strong>锁屏或别的应用开着时把提醒页盖到最上层。Android 14 起需单独允许，可拒绝。</li>
+        <li><strong>自选背景图：</strong>你主动挑一张图当背景时，通过系统文件选择器读取这一张图。<strong>不申请相册或存储权限</strong>，读不到你没选的任何文件。</li>
+      </ul>
     </section>
 
     <section>
       <h3><span class="n">4</span>我们不做的事</h3>
       <ul>
-        <li>不要求注册、登录，不收集姓名、手机、邮箱、位置、通讯录等任何信息。</li>
-        <li>不接入广告 SDK，不做个性化推荐，不做用户画像。</li>
-        <li>不读取你设备上的其他文件、照片或应用数据。</li>
-        <li>不进行任何形式的联网请求或数据传输。</li>
+        <li>不要求注册、登录，不收集姓名、手机号、邮箱、身份证等任何身份信息。</li>
+        <li>不读取通讯录、短信、通话记录、相册、位置、日历。</li>
+        <li>不采集 IMEI、MAC 地址、Android ID、序列号等设备标识。</li>
+        <li>不读取剪贴板、不写剪贴板（「复制反馈信息」除外，且只在你点击时写入本机剪贴板）。</li>
+        <li>不接入广告 SDK、统计 SDK、推送 SDK、社交分享 SDK，不做个性化推荐，不做用户画像。</li>
+        <li>不在后台发起任何网络请求或数据传输。</li>
       </ul>
     </section>
 
     <section>
-      <h3><span class="n">5</span>儿童隐私</h3>
+      <h3><span class="n">5</span>第三方组件</h3>
+      <p>软件不含任何第三方 SDK。运行时只依赖操作系统组件与 Electron、AndroidX、Kotlin 等基础运行库，这些库均不具备统计、广告或数据回传功能。</p>
+    </section>
+
+    <section>
+      <h3><span class="n">6</span>你主动导出的文件</h3>
+      <p>导出 JSON 备份或 .ics 日历时，文件会保存到你选择的位置（下载目录、网盘或其他应用）。这一步完全由你发起，去向由你决定，我们不经手也不留存副本。请注意：文件里包含你的提醒标题与时间，分享给别人对方就能看到。</p>
+    </section>
+
+    <section>
+      <h3><span class="n">7</span>如何删除你的数据</h3>
+      <ul>
+        <li><strong>单条：</strong>在主界面删除；</li>
+        <li><strong>全部：</strong>设置 → 数据 → 清空全部提醒（清空前会自动留一份备份）；</li>
+        <li><strong>彻底：</strong>卸载软件，本地数据（含备份）一并删除。</li>
+      </ul>
+      <p class="kv">因为我们从未收到过你的数据，所以不存在「需要联系开发者删除服务器数据」这种情况。</p>
+    </section>
+
+    <section>
+      <h3><span class="n">8</span>儿童隐私</h3>
       <p>由于本软件不收集任何数据，对任何年龄段的用户均一视同仁，不会收集儿童的个人信息。</p>
     </section>
 
     <section>
-      <h3><span class="n">6</span>政策更新</h3>
-      <p>如本政策发生变更，我们会在本页面更新并调整生效日期。由于软件无网络功能，更新政策不会也不需要向你推送。</p>
+      <h3><span class="n">9</span>政策更新</h3>
+      <p>如本政策发生变更，我们会在本页面更新并调整生效日期。涉及收集范围变化的重大修改，会在应用内重新征求你的同意，而不是默认生效。</p>
     </section>
 
     <section>
-      <h3><span class="n">7</span>联系我们</h3>
-      <p>如对本隐私政策有任何疑问或建议，可通过项目仓库提交 Issue 联系：<strong>https://github.com/fushengzhenjun/qing-tixing/issues</strong>。</p>
+      <h3><span class="n">10</span>联系我们</h3>
+      <p>开发者：fushengzhenjun（个人开发者）。如对本隐私政策有任何疑问或建议，可通过项目仓库提交 Issue 联系：<strong>https://github.com/fushengzhenjun/qing-tixing/issues</strong>。</p>
     </section>
 
     <footer>© 2026 fushengzhenjun · 轻铃</footer>
