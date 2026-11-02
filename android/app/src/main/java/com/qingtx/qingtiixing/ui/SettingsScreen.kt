@@ -117,6 +117,7 @@ fun SettingsScreen(
     onBackupNow: () -> String,
     onTestFire: () -> String,
     onOpenNotifSettings: () -> Unit,
+    onOpenPrivacy: () -> Unit,
     onCopyDiagnostics: () -> String,
     onBack: () -> Unit
 ) {
@@ -583,7 +584,8 @@ fun SettingsScreen(
                         versionName = versionName,
                         androidLabel = androidLabel,
                         onCopyDiagnostics = { msg = onCopyDiagnostics() },
-                        onOpenNotifSettings = onOpenNotifSettings
+                        onOpenNotifSettings = onOpenNotifSettings,
+                        onOpenPrivacy = onOpenPrivacy
                     )
 
                     Spacer(Modifier.height(32.dp))
@@ -739,7 +741,8 @@ private fun AboutCard(
     versionName: String,
     androidLabel: String,
     onCopyDiagnostics: () -> Unit,
-    onOpenNotifSettings: () -> Unit
+    onOpenNotifSettings: () -> Unit,
+    onOpenPrivacy: () -> Unit
 ) {
     var romOpen by remember { mutableStateOf(false) }
 
@@ -781,6 +784,15 @@ private fun AboutCard(
             desc = "由系统通知渠道控制",
             action = "打开",
             onAction = onOpenNotifSettings
+        )
+
+        Divider()
+
+        ActionRow(
+            title = "隐私政策",
+            desc = "不联网、不收集数据 · 查看完整条款",
+            action = "查看",
+            onAction = onOpenPrivacy
         )
 
         Divider()

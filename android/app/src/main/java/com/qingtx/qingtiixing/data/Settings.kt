@@ -39,7 +39,16 @@ data class SettingsSnapshot(
      * 到点是否把提醒页整个弹到最上层（对应电脑版的「弹窗盖在最上层」）。
      * 关掉之后只走通知，不亮屏、不抢前台——开会、开车时不想被整页盖住的人会用到。
      */
-    val fullScreenAlarm: Boolean = true
+    val fullScreenAlarm: Boolean = true,
+    /**
+     * 隐私政策是否已同意。
+     *
+     * 没有这一步，国内商店一律不给过：启动必须先弹政策、用户点了同意才能进主界面，
+     * 而且同意之前不许申请任何权限。默认 false，老用户升级上来也会被问一次。
+     */
+    val privacyAccepted: Boolean = false,
+    /** 同意时间，便于日后自查「什么时候同意的」 */
+    val privacyAcceptedAt: Long = 0L
 ) {
 
     fun pausedNow(now: Long = System.currentTimeMillis()): Boolean =
@@ -101,6 +110,8 @@ object Settings {
     private const val K_ALARM_BG = "alarmBgUri"
     private const val K_HOLIDAY = "holidayAware"
     private const val K_FULLSCREEN = "fullScreenAlarm"
+    private const val K_PRIVACY = "privacyAccepted"
+    private const val K_PRIVACY_AT = "privacyAcceptedAt"
 
     private var sp: SharedPreferences? = null
 
@@ -124,7 +135,9 @@ object Settings {
             appBgUri = p.getString(K_APP_BG, "") ?: "",
             alarmBgUri = p.getString(K_ALARM_BG, "") ?: "",
             holidayAware = p.getBoolean(K_HOLIDAY, true),
-            fullScreenAlarm = p.getBoolean(K_FULLSCREEN, true)
+            fullScreenAlarm = p.getBoolean(K_FULLSCREEN, true),
+            privacyAccepted = p.getBoolean(K_PRIVACY, false),
+            privacyAcceptedAt = p.getLong(K_PRIVACY_AT, 0L)
         )
         Holiday.aware = _flow.value.holidayAware
     }
@@ -155,6 +168,17 @@ object Settings {
         val s = _flow.value.copy(fullScreenAlarm = on)
         _flow.value = s
         sp?.edit()?.putBoolean(K_FULLSCREEN, on)?.apply()
+    }
+
+    /**
+     * 记下「已同意隐私政策」。
+     * 只在用户真的点了同意时调用；不同意就停在同意页并退出，不写这个标记。
+     */
+    fun acceptPrivacy() {
+        val now = System.currentTimeMillis()
+        val s = _flow.value.copy(privacyAccepted = true, privacyAcceptedAt = now)
+        _flow.value = s
+        sp?.edit()?.putBoolean(K_PRIVACY, true)?.putLong(K_PRIVACY_AT, now)?.apply()
     }
 
     fun setHolidayAware(on: Boolean) {

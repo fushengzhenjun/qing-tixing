@@ -33,8 +33,10 @@ import com.qingtx.qingtiixing.data.Settings as AppPrefs
 import com.qingtx.qingtiixing.data.Store
 import com.qingtx.qingtiixing.data.ThemeMode
 import com.qingtx.qingtiixing.data.Transfer
+import com.qingtx.qingtiixing.ui.ConsentGate
 import com.qingtx.qingtiixing.ui.EditorScreen
 import com.qingtx.qingtiixing.ui.HomeScreen
+import com.qingtx.qingtiixing.ui.PrivacyPolicyScreen
 import com.qingtx.qingtiixing.ui.QtxTheme
 import com.qingtx.qingtiixing.ui.SettingsScreen
 
@@ -52,7 +54,18 @@ class MainActivity : ComponentActivity() {
                 ThemeMode.DARK -> true
             }
             QtxTheme(dark = dark) {
-                AppRoot()
+                /* 没同意隐私政策就不组合主界面。
+                   关键是：AppRoot 里那个 LaunchedEffect 会申请通知权限，
+                   而商店审核明确要求「用户同意隐私政策之前不得申请任何权限」，
+                   所以门必须设在最外面，不能只在里面加个弹窗盖一层。 */
+                if (prefs.privacyAccepted) {
+                    AppRoot()
+                } else {
+                    ConsentGate(
+                        onAgree = { AppPrefs.acceptPrivacy() },
+                        onDecline = { finish() }
+                    )
+                }
             }
         }
     }
@@ -62,6 +75,8 @@ private sealed interface Screen {
     data object Home : Screen
     data class Editor(val id: String?) : Screen
     data object Settings : Screen
+    /** 从「关于」点进来看隐私政策全文 */
+    data object Privacy : Screen
 }
 
 @Composable
@@ -177,6 +192,8 @@ private fun AppRoot() {
             )
         }
 
+        is Screen.Privacy -> PrivacyPolicyScreen(onBack = { screen = Screen.Settings })
+
         is Screen.Settings -> SettingsScreen(
             versionName = versionName,
             androidLabel = "Android ${Build.VERSION.RELEASE} · SDK ${Build.VERSION.SDK_INT}",
@@ -286,6 +303,7 @@ private fun AppRoot() {
                 }
             },
             onOpenNotifSettings = { openAppNotificationSettings(ctx) },
+            onOpenPrivacy = { screen = Screen.Privacy },
             onCopyDiagnostics = {
                 val text = "轻铃 v$versionName\n" +
                     "Android ${Build.VERSION.RELEASE}（SDK ${Build.VERSION.SDK_INT}）\n" +
