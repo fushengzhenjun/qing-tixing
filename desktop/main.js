@@ -13,10 +13,14 @@ const ALLOW_HOSTS = ["github.com", "www.github.com", "gitee.com", "www.gitee.com
    · 绿色版：exe 同目录放 portable.flag → 数据写在 exe 同目录的「数据」文件夹，可随 U 盘带走
    · 旧版 v1.0.0 曾把数据硬编码在 D:\轻提醒\轻提醒数据，首次启动自动迁移，老用户不丢数据 */
 let DATA_DIR = null;
+/* 是否跑在 MSIX 包里（商店版）。
+   商店版不能走便携模式：包目录是只读的，写进去的「数据」重启就被清掉；
+   也不能用注册表 Run 键做开机自启。所以这个标志要早于数据目录判断。 */
+const PACKAGED = process.windowsStore === true;
 (function initUserData() {
   try {
     const exeDir = path.dirname(process.execPath);
-    const portable = app.isPackaged && fs.existsSync(path.join(exeDir, "portable.flag"));
+    const portable = app.isPackaged && !PACKAGED && fs.existsSync(path.join(exeDir, "portable.flag"));
     const dataDir = portable
       ? path.join(exeDir, "数据")
       : path.join(app.getPath("appData"), "轻铃");
@@ -56,6 +60,7 @@ if (!gotLock) {
 } else {
   let win = null;
   let tray = null;
+  let refreshTrayMenu = null;
   let isQuiting = false;
   let closeHinted = false;
   let quickWin = null;
@@ -224,7 +229,7 @@ if (!gotLock) {
     tray.setToolTip("轻铃 · 后台运行中");
 
     function buildMenu() {
-      const openAtLogin = isAutoLaunchOn();
+      const openAtLogin = autoLaunchOnNow();
       return Menu.buildFromTemplate([
         { label: "打开轻铃", click: showWindow },
         { label: "快速添加提醒（Ctrl+Alt+N）", click: () => showQuickAdd() },
@@ -233,8 +238,7 @@ if (!gotLock) {
           type: "checkbox",
           checked: openAtLogin,
           click: (item) => {
-            app.setLoginItemSettings(loginItemSettings(item.checked));
-            refreshMenu();
+            setAutoLaunch(item.checked).then(() => refreshMenu());
           }
         },
         { type: "separator" },
@@ -251,6 +255,7 @@ if (!gotLock) {
     function refreshMenu() {
       tray.setContextMenu(buildMenu());
     }
+    refreshTrayMenu = refreshMenu;
 
     tray.on("click", () => {
       if (!win) return;
@@ -268,7 +273,18 @@ if (!gotLock) {
      args 里带 --hidden：开机启动只驻留托盘，不把窗口弹到桌面上。 */
   const LOGIN_ITEM_NAME = "com.qingtx.qingtiixing";
   const HIDDEN_FLAG = "--hidden";
-  const startHidden = process.argv.indexOf(HIDDEN_FLAG) >= 0;
+
+  /* 商店版（MSIX）走的是另一套：
+     包里的注册表写入会被容器重定向，写了也不生效，所以不能再用 Run 键。
+     改用清单里声明的 startupTask（TaskId 固定 QingLingStartup，默认关闭），
+     由 WinRT 的 StartupTask 接口开关——这也是商店审核认可的做法。
+     判断依据就是文件开头那个 PACKAGED。 */
+  const STARTUP_TASK_ID = "QingLingStartup";
+
+  /* 开机时系统拉起本应用的三种称谓都算「静默启动」：
+     安装版是我们自己写进 Run 键的 --hidden；
+     MSIX 版由系统带 -StartupTask 参数启动。 */
+  const startHidden = process.argv.some((a) => /^--hidden$/i.test(a) || /^[-/]startuptask$/i.test(a));
 
   function loginItemSettings(enabled) {
     return {
@@ -287,12 +303,143 @@ if (!gotLock) {
     }
   }
 
+  /* ---- 商店版的开关：调 WinRT 的 StartupTask ----
+     两层结构，原因很现实：
+     1) Node 里没有 WinRT 投影，要借 PowerShell 调 Windows.ApplicationModel.StartupTask；
+     2) 直接 spawn 出来的子进程没有 AUMID，GetAsync 会报 0x80070490（实测），
+        所以外层用 Invoke-CommandInDesktopPackage 让系统以应用身份再拉一次内层脚本，
+        内层才有完整的应用上下文。结果经结果文件回传，主进程读 stdout 即可。
+     返回 null 表示查询失败（例如在非打包环境下跑），调用方按「关」处理。 */
+  const STARTUP_APP_ID = "QingLing";
+  /* 商店分配的包族名（Partner Center → 产品标识页）。商店重签后不变。 */
+  const PACKAGE_FAMILY_NAME = "fushengzhengjun.49937DCD7D457_zdgns8favebmy";
+
+  /* 内层：在应用上下文里执行真正的 WinRT 调用，结果写 stdout 和结果文件。
+     任何一步出错都要把错误写进结果文件——外层只能靠这个文件判断成败。 */
+  const PS_INNER = [
+    "param([string]$Action)",
+    "$ErrorActionPreference = 'Stop'",
+    "try {",
+    "Add-Type -AssemblyName System.Runtime.WindowsRuntime | Out-Null",
+    "$asTask = ([System.WindowsRuntimeSystemExtensions].GetMethods() | Where-Object {",
+    "  $_.Name -eq 'AsTask' -and $_.GetParameters().Count -eq 1 -and",
+    "  $_.GetParameters()[0].ParameterType.Name -eq 'IAsyncOperation`1' })[0]",
+    "function Await($op, $type) {",
+    "  $m = $asTask.MakeGenericMethod($type)",
+    "  $t = $m.Invoke($null, @($op))",
+    "  $t.Wait(-1) | Out-Null",
+    "  $t.Result",
+    "}",
+    "$taskType = [Windows.ApplicationModel.StartupTask, Windows.ApplicationModel, ContentType = WindowsRuntime]",
+    "$stateType = [Windows.ApplicationModel.StartupTaskState, Windows.ApplicationModel, ContentType = WindowsRuntime]",
+    "$task = Await ($taskType::GetAsync('QingLingStartup')) $taskType",
+    "switch ($Action) {",
+    "  'get' { }",
+    "  'enable' { if ($task.State -ne 'Enabled') { Await ($task.RequestEnableAsync()) $stateType | Out-Null } }",
+    "  'disable' { if ($task.State -eq 'Enabled') { $task.Disable() } }",
+    "}",
+    "$line = 'STATE:' + $task.State",
+    "} catch {",
+    "  $em = $_.Exception.Message -replace '\\s+', ' '",
+    "  if ($em.Length -gt 160) { $em = $em.Substring(0,160) }",
+    "  $line = 'STATE:Err:' + $em",
+    "}",
+    "Write-Output $line",
+    "Set-Content -Path (Join-Path $PSScriptRoot 'startup-task-result.txt') -Value $line -Force"
+  ].join("\r\n");
+
+  /* 外层：包装器，负责拿到应用身份再执行内层。
+     注意：主进程 spawn 出来的子进程完全没有包上下文（Package.Current 直接抛，
+     实测），所以 PFN 必须由主进程经 QL_PKG 显式传进来，不能指望子进程自己发现。
+     Invoke-CommandInDesktopPackage 本身不要求调用方有身份，任何进程都能用它
+     以指定应用的身份拉起命令——这正是这里要用的能力。超时 20 秒轮询结果文件。 */
+  const PS_WRAP = [
+    "param([string]$Action)",
+    "$ErrorActionPreference = 'Stop'",
+    "$resultFile = Join-Path $PSScriptRoot 'startup-task-result.txt'",
+    "if (Test-Path $resultFile) { Remove-Item $resultFile -Force }",
+    "$pfn = $env:QL_PKG",
+    "if (-not $pfn) { try { $pfn = [Windows.ApplicationModel.Package]::Current.Id.FamilyName } catch { } }",
+    "if (-not $pfn) { Write-Output 'STATE:NoIdentity'; exit 0 }",
+    "$inner = Join-Path $PSScriptRoot 'startup-task.ps1'",
+    "Invoke-CommandInDesktopPackage -PackageFamilyName $pfn -AppId '" + STARTUP_APP_ID + "' -Command 'powershell.exe' -Args \"-NoProfile -ExecutionPolicy Bypass -File `\"$inner`\" -Action $Action\" -PreventBreakaway | Out-Null",
+    "$deadline = (Get-Date).AddSeconds(45)",
+    "while ((Get-Date) -lt $deadline) {",
+    "  if (Test-Path $resultFile) { Get-Content $resultFile; exit 0 }",
+    "  Start-Sleep -Milliseconds 500",
+    "}",
+    "Write-Output 'STATE:Timeout'"
+  ].join("\r\n");
+
+  function ensureStartupScripts(dir) {
+    const inner = path.join(dir, "startup-task.ps1");
+    const wrap = path.join(dir, "startup-task-wrap.ps1");
+    let need = false;
+    try {
+      need = !fs.existsSync(inner) || fs.readFileSync(inner, "utf8") !== PS_INNER ||
+             !fs.existsSync(wrap) || fs.readFileSync(wrap, "utf8") !== PS_WRAP;
+    } catch (e) { need = true; }
+    if (!need) return;
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(inner, PS_INNER, "utf8");
+    fs.writeFileSync(wrap, PS_WRAP, "utf8");
+  }
+
+  function runStartupTask(action) {
+    return new Promise((resolve) => {
+      if (!PACKAGED) return resolve(null);
+      try {
+        const dir = app.getPath("userData");
+        ensureStartupScripts(dir);
+        const { execFile } = require("child_process");
+        execFile(
+          "powershell.exe",
+          ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", path.join(dir, "startup-task-wrap.ps1"), "-Action", action],
+          {
+            windowsHide: true,
+            timeout: 30000,
+            env: Object.assign({}, process.env, { QL_TASK_ID: STARTUP_TASK_ID, QL_PKG: PACKAGE_FAMILY_NAME })
+          },
+          (err, stdout) => {
+            const m = /STATE:(\w+)/.exec(String(stdout || ""));
+            resolve(m ? m[1] : null);
+          }
+        );
+      } catch (e) {
+        resolve(null);
+      }
+    });
+  }
+
+  /* 托盘菜单是同步构建的，所以商店版把最近一次查到的状态缓存下来 */
+  let packagedStartupOn = false;
+
+  async function getAutoLaunch() {
+    if (!PACKAGED) return isAutoLaunchOn();
+    const s = await runStartupTask("get");
+    packagedStartupOn = s === "Enabled" || s === "EnabledByPolicy";
+    return packagedStartupOn;
+  }
+
+  async function setAutoLaunch(enabled) {
+    if (!PACKAGED) {
+      app.setLoginItemSettings(loginItemSettings(!!enabled));
+      return isAutoLaunchOn();
+    }
+    await runStartupTask(enabled ? "enable" : "disable");
+    return getAutoLaunch();
+  }
+
+  function autoLaunchOnNow() {
+    return PACKAGED ? packagedStartupOn : isAutoLaunchOn();
+  }
+
   /* 迁移旧版本写下的启动项
      v1.3.x 及更早写入的启动项没有 --hidden，开机时会把主窗口直接弹出来。
      这里判断「有启动项、但参数对不上」，原地重写成新参数，用户不用再去设置里点一遍。
      原本没开自启的不动。 */
   function repairAutoLaunch() {
-    if (!app.isPackaged) return;
+    if (!app.isPackaged || PACKAGED) return;
     try {
       const s = app.getLoginItemSettings({ path: process.execPath, args: [HIDDEN_FLAG] });
       if (s && s.openAtLogin && !s.executableWillLaunchAtLogin) {
@@ -321,11 +468,8 @@ if (!gotLock) {
   }
 
   /* 设置面板经 preload 桥查询 / 设置 */
-  ipcMain.handle("auto-launch:get", () => isAutoLaunchOn());
-  ipcMain.handle("auto-launch:set", (_e, enabled) => {
-    app.setLoginItemSettings(loginItemSettings(!!enabled));
-    return isAutoLaunchOn();
-  });
+  ipcMain.handle("auto-launch:get", () => getAutoLaunch());
+  ipcMain.handle("auto-launch:set", (_e, enabled) => setAutoLaunch(!!enabled));
 
   /* 到点把窗口叫到前台
      场景：用户拒绝过通知权限、或系统不支持通知时，弹层只会显示在隐藏窗口上，
@@ -761,6 +905,8 @@ if (!gotLock) {
     repairAutoLaunch();
     createTray();
     createWindow();
+    /* 商店版：托盘菜单要立刻显示正确的勾选状态，先把 startupTask 状态捞一遍 */
+    if (PACKAGED) getAutoLaunch().then(() => { try { if (refreshTrayMenu) refreshTrayMenu(); } catch (e) {} });
     if (startHidden) hintHiddenOnce();
     applyQuickShortcut(true);
     app.on("activate", () => {

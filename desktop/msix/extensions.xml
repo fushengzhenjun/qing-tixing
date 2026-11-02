@@ -1,0 +1,9 @@
+<!-- MSIX 版的开机自启声明。
+
+     为什么不用 electron-builder 自带的 appx.addAutoLaunchExtension：
+     它把 TaskId 写死成 "SlackStartup"，并且 Enabled="true"——等于默认替用户开机自启，
+     商店审核对这种「未经用户同意就设自启」是敏感的。这里改成自己的 TaskId，
+     默认关，用户在设置里点开才启用。 -->
+<desktop:Extension Category="windows.startupTask" Executable="app\轻铃.exe" EntryPoint="Windows.FullTrustApplication">
+  <desktop:StartupTask TaskId="QingLingStartup" Enabled="false" DisplayName="轻铃桌面版" />
+</desktop:Extension>

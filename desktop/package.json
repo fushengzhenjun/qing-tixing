@@ -12,6 +12,7 @@
     "portable": "node build.js",
     "assets": "node ../tools/gen_installer_assets.js",
     "dist": "electron-builder --win nsis --x64",
+    "dist:msix": "electron-builder --win appx --x64",
     "release": "node build.js && electron-builder --win nsis --x64"
   },
   "build": {
@@ -70,6 +71,19 @@
       "language": "2052",
       "include": "installer.nsh",
       "artifactName": "QingLing-Setup-${version}.${ext}"
+    },
+    "appx": {
+      "identityName": "fushengzhengjun.49937DCD7D457",
+      "publisher": "CN=53CB2227-FEA6-47A8-AB3F-F126814216B6",
+      "publisherDisplayName": "fushengzhengjun",
+      "applicationId": "QingLing",
+      "displayName": "轻铃桌面版",
+      "languages": [
+        "zh-CN",
+        "en-US"
+      ],
+      "customExtensionsPath": "msix/extensions.xml",
+      "artifactName": "QingLing-Store-${version}.${ext}"
     }
   },
   "devDependencies": {

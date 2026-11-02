@@ -18,6 +18,7 @@ desktop/selftest/轻提醒.selftest.html
 # ---------- 构建中间产物 ----------
 desktop/dist/
 desktop/release/
+desktop/release-msix/
 desktop/node_modules/
 android/.gradle/
 android/.kotlin/
